@@ -17,7 +17,7 @@ import chromadb
 from sentence_transformers import SentenceTransformer
 
 CHROMA_PATH = pathlib.Path(__file__).parent / "chroma_db"
-DEFAULT_CSV  = pathlib.Path(__file__).parent.parent / "prototype" / "mock_shift_notes.csv"
+DEFAULT_CSV  = pathlib.Path(__file__).parent.parent / "mock_shift_notes.csv"
 EMBED_MODEL  = "all-MiniLM-L6-v2"
 COLLECTION   = "shift_reports"
 
