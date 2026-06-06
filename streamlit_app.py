@@ -71,14 +71,24 @@ with st.sidebar:
 
     st.divider()
     st.subheader("RAG Settings")
-    api_key = st.text_input("Groq API Key", type="password",
-                             help="Free at groq.com — required for the Ask ShiftNotes tab.")
+    _groq_secret = st.secrets.get("GROQ_API_KEY", "")
+    if _groq_secret:
+        api_key = _groq_secret
+        st.caption("Groq API Key: loaded from secrets")
+    else:
+        api_key = st.text_input("Groq API Key", type="password",
+                                 help="Free at groq.com — required for the Ask ShiftNotes tab.")
     n_results = st.slider("Reports to retrieve", min_value=3, max_value=10, value=5)
 
     st.divider()
     st.subheader("Agent Settings")
-    openai_api_key = st.text_input("OpenAI API Key", type="password",
-                                    help="Required to run the LangGraph pipeline in the Briefings tab.")
+    _openai_secret = st.secrets.get("OPENAI_API_KEY", "")
+    if _openai_secret:
+        openai_api_key = _openai_secret
+        st.caption("OpenAI API Key: loaded from secrets")
+    else:
+        openai_api_key = st.text_input("OpenAI API Key", type="password",
+                                        help="Required to run the LangGraph pipeline in the Briefings tab.")
 
 # ── Load data ─────────────────────────────────────────────────────────────────
 if use_mock == "Mock dataset":
