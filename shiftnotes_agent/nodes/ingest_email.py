@@ -18,7 +18,7 @@ def ingest_email(state: ShiftNotesState) -> ShiftNotesState:
     log_node_entry(logger, "ingest_email", run_id)
 
     try:
-        reports = _read_from_gmail_mcp()
+        reports = _read_from_csv()
 
         log_node_exit(logger, "ingest_email", run_id, f"loaded {len(reports)} reports")
 

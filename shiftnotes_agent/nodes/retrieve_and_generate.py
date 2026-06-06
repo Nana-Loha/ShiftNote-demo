@@ -1,3 +1,4 @@
+import pathlib
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_chroma import Chroma
@@ -10,12 +11,28 @@ from shiftnotes_agent.logger import get_logger, log_node_entry, log_node_exit, l
 load_dotenv()
 logger = get_logger("retrieve_and_generate")
 
-# Initialize OpenAI
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.3)
-embeddings = OpenAIEmbeddings()
+# Lazy-initialized so the module can be imported without OPENAI_API_KEY set
+_llm = None
+_embeddings = None
+
+
+def _get_llm():
+    global _llm
+    if _llm is None:
+        _llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.3)
+    return _llm
+
+
+def _get_embeddings():
+    global _embeddings
+    if _embeddings is None:
+        _embeddings = OpenAIEmbeddings()
+    return _embeddings
 
 # ChromaDB collection name
 CHROMA_COLLECTION = "shiftnotes_reports"
+# Absolute path so it resolves correctly regardless of working directory
+_CHROMA_DIR = str(pathlib.Path(__file__).parent.parent.parent / "chroma_db")
 
 
 def retrieve_and_generate(state: ShiftNotesState) -> ShiftNotesState:
@@ -66,8 +83,8 @@ def _retrieve_context(detected_signals: list[dict]) -> str:
     try:
         vectorstore = Chroma(
             collection_name=CHROMA_COLLECTION,
-            embedding_function=embeddings,
-            persist_directory="./chroma_db"
+            embedding_function=_get_embeddings(),
+            persist_directory=_CHROMA_DIR,
         )
 
         # Build a query from the detected signals
@@ -116,7 +133,7 @@ Write the briefing now."""
         HumanMessage(content=user_prompt)
     ]
 
-    response = llm.invoke(messages)
+    response = _get_llm().invoke(messages)
     return response.content
 
 

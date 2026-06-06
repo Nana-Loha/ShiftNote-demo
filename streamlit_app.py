@@ -9,6 +9,7 @@ Run with:
 import io
 import os
 import sys
+import uuid
 import pathlib
 import pandas as pd
 import plotly.express as px
@@ -26,6 +27,12 @@ sys.path.insert(0, str(RAG_DIR))
 from signal_classifier import apply_to_dataframe
 from embed import build_index, prepare_dataframe
 from retriever import get_embedding_model, get_collection, query
+
+try:
+    from shiftnotes_agent.graph import graph as _agent_graph
+    _AGENT_AVAILABLE = True
+except Exception:
+    _AGENT_AVAILABLE = False
 
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -67,6 +74,11 @@ with st.sidebar:
     api_key = st.text_input("Groq API Key", type="password",
                              help="Free at groq.com — required for the Ask ShiftNotes tab.")
     n_results = st.slider("Reports to retrieve", min_value=3, max_value=10, value=5)
+
+    st.divider()
+    st.subheader("Agent Settings")
+    openai_api_key = st.text_input("OpenAI API Key", type="password",
+                                    help="Required to run the LangGraph pipeline in the Briefings tab.")
 
 # ── Load data ─────────────────────────────────────────────────────────────────
 if use_mock == "Mock dataset":
@@ -269,18 +281,120 @@ with tab3:
 
     st.divider()
 
-    action_items = [f"Review prep planning at **{top_waste}** — highest unclaimed lunches this week ({int(waste_by_kiosk.iloc[0])} meals)."]
-    if poke_kiosks:
-        action_items.append(f"Follow up on Poke Requests at **{', '.join(poke_kiosks)}** — consider whether demand warrants a menu addition.")
-    if shortage_kiosks:
-        action_items.append(f"Address chicken shortages reported at **{', '.join(shortage_kiosks)}** — check supply ordering for next week.")
-    if ops_kiosks:
-        action_items.append(f"Look into operational issues flagged at **{', '.join(ops_kiosks)}**.")
+    st.subheader("AI-Generated Briefing")
 
-    numbered = "\n".join(f"{i+1}. {item}" for i, item in enumerate(action_items))
-    recognition_note = f"\n\n**Recognition:** Great work noted at **{', '.join(recognition_kiosks)}** this week — consider passing on the recognition." if recognition_kiosks else ""
+    if not _AGENT_AVAILABLE:
+        st.warning("Agent pipeline unavailable — check that shiftnotes_agent dependencies are installed.")
 
-    st.markdown(f"**Highest Waste Kiosk:** {top_waste}\n\n**Recommended Attention:**\n{numbered}{recognition_note}")
+    elif not openai_api_key:
+        st.info("Enter your OpenAI API Key in the sidebar (Agent Settings) to run the pipeline.")
+        # Static fallback briefing
+        action_items = [f"Review prep planning at **{top_waste}** — highest unclaimed lunches this week ({int(waste_by_kiosk.iloc[0])} meals)."]
+        if poke_kiosks:
+            action_items.append(f"Follow up on Poke Requests at **{', '.join(poke_kiosks)}** — consider whether demand warrants a menu addition.")
+        if shortage_kiosks:
+            action_items.append(f"Address chicken shortages reported at **{', '.join(shortage_kiosks)}** — check supply ordering for next week.")
+        if ops_kiosks:
+            action_items.append(f"Look into operational issues flagged at **{', '.join(ops_kiosks)}**.")
+        numbered = "\n".join(f"{i+1}. {item}" for i, item in enumerate(action_items))
+        recognition_note = f"\n\n**Recognition:** Great work noted at **{', '.join(recognition_kiosks)}** this week — consider passing on the recognition." if recognition_kiosks else ""
+        st.markdown(f"**Highest Waste Kiosk:** {top_waste}\n\n**Recommended Attention:**\n{numbered}{recognition_note}")
+
+    else:
+        os.environ["OPENAI_API_KEY"] = openai_api_key
+
+        if "sn_status" not in st.session_state:
+            st.session_state["sn_status"] = "idle"
+        if "sn_thread_id" not in st.session_state:
+            st.session_state["sn_thread_id"] = None
+        if "sn_error" not in st.session_state:
+            st.session_state["sn_error"] = None
+
+        status = st.session_state["sn_status"]
+
+        if status == "idle":
+            if st.button("▶ Run Pipeline", type="primary"):
+                run_id = str(uuid.uuid4())[:8]
+                thread_cfg = {"configurable": {"thread_id": run_id}}
+                st.session_state["sn_thread_id"] = thread_cfg
+                initial_state = {
+                    "run_id": run_id, "timestamp": "", "raw_reports": [],
+                    "intent": "", "detected_signals": [], "retrieved_context": "",
+                    "generated_briefing": "", "briefing_sent": False,
+                    "ted_decision": None, "escalation_note": None, "error": None,
+                }
+                with st.spinner("Running pipeline — ingesting reports, detecting signals, generating briefing..."):
+                    try:
+                        for _ in _agent_graph.stream(initial_state, thread_cfg):
+                            pass
+                    except Exception as e:
+                        st.session_state["sn_status"] = "error"
+                        st.session_state["sn_error"] = str(e)
+                        st.rerun()
+                snapshot = _agent_graph.get_state(thread_cfg)
+                if snapshot.next and "human_review" in snapshot.next:
+                    st.session_state["sn_status"] = "awaiting_review"
+                elif snapshot.values.get("error"):
+                    st.session_state["sn_status"] = "error"
+                    st.session_state["sn_error"] = snapshot.values["error"]
+                else:
+                    st.session_state["sn_status"] = "complete"
+                st.rerun()
+
+        elif status == "awaiting_review":
+            thread_cfg = st.session_state["sn_thread_id"]
+            snapshot = _agent_graph.get_state(thread_cfg)
+            briefing = snapshot.values.get("generated_briefing", "")
+            st.success("Pipeline complete — briefing ready for your review.")
+            st.markdown(briefing)
+            st.divider()
+            col_approve, col_drill, col_escalate = st.columns(3)
+            if col_approve.button("✅ Approve", type="primary"):
+                with st.spinner("Finalizing..."):
+                    _agent_graph.update_state(thread_cfg, {"ted_decision": "accept"}, as_node="human_review")
+                    for _ in _agent_graph.stream(None, thread_cfg):
+                        pass
+                st.session_state["sn_status"] = "complete"
+                st.rerun()
+            if col_drill.button("🔍 Drill Down"):
+                with st.spinner("Finalizing..."):
+                    _agent_graph.update_state(thread_cfg, {"ted_decision": "drill_down"}, as_node="human_review")
+                    for _ in _agent_graph.stream(None, thread_cfg):
+                        pass
+                st.session_state["sn_status"] = "complete"
+                st.rerun()
+            escalation_note = st.text_input("Escalation note", placeholder="Describe what needs escalation...", key="sn_escalation_note")
+            if col_escalate.button("🚩 Escalate"):
+                with st.spinner("Finalizing..."):
+                    _agent_graph.update_state(
+                        thread_cfg,
+                        {"ted_decision": "escalate", "escalation_note": escalation_note or None},
+                        as_node="human_review",
+                    )
+                    for _ in _agent_graph.stream(None, thread_cfg):
+                        pass
+                st.session_state["sn_status"] = "complete"
+                st.rerun()
+
+        elif status == "complete":
+            thread_cfg = st.session_state["sn_thread_id"]
+            final = _agent_graph.get_state(thread_cfg)
+            briefing = final.values.get("generated_briefing", "")
+            decision = final.values.get("ted_decision", "")
+            labels = {"accept": "✅ Approved", "drill_down": "🔍 Drill Down", "escalate": "🚩 Escalated"}
+            st.info(f"Decision recorded: **{labels.get(decision, decision)}**")
+            st.markdown(briefing)
+            if st.button("↺ Run Again"):
+                st.session_state["sn_status"] = "idle"
+                st.session_state["sn_thread_id"] = None
+                st.rerun()
+
+        elif status == "error":
+            st.error(f"Pipeline error: {st.session_state.get('sn_error', 'Unknown error')}")
+            if st.button("↺ Retry"):
+                st.session_state["sn_status"] = "idle"
+                st.session_state["sn_error"] = None
+                st.rerun()
 
     st.divider()
     st.subheader("Reports This Week")
