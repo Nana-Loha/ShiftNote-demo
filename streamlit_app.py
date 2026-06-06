@@ -15,7 +15,7 @@ import plotly.express as px
 import streamlit as st
 
 # ── Path setup ────────────────────────────────────────────────────────────────
-PROTO_DIR   = pathlib.Path(__file__).parent
+PROTO_DIR   = pathlib.Path(__file__).parent / "prototype"
 RAG_DIR     = PROTO_DIR / "rag"
 CHROMA_PATH = RAG_DIR / "chroma_db"
 MOCK_CSV    = PROTO_DIR / "mock_shift_notes.csv"
