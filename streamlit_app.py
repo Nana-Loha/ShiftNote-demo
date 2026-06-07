@@ -71,7 +71,10 @@ with st.sidebar:
 
     st.divider()
     st.subheader("RAG Settings")
-    _groq_secret = st.secrets.get("GROQ_API_KEY", "")
+    try:
+        _groq_secret = st.secrets.get("GROQ_API_KEY", "")
+    except Exception:
+        _groq_secret = ""
     if _groq_secret:
         api_key = _groq_secret
         st.caption("Groq API Key: loaded from secrets")
@@ -82,7 +85,10 @@ with st.sidebar:
 
     st.divider()
     st.subheader("Agent Settings")
-    _openai_secret = st.secrets.get("OPENAI_API_KEY", "")
+    try:
+        _openai_secret = st.secrets.get("OPENAI_API_KEY", "")
+    except Exception:
+        _openai_secret = ""
     if _openai_secret:
         openai_api_key = _openai_secret
         st.caption("OpenAI API Key: loaded from secrets")
