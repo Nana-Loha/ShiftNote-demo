@@ -1,9 +1,20 @@
+import os
+import sys
 import uuid
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
+
+# Load .env and confirm OPENAI_API_KEY is present before importing the graph
+load_dotenv(find_dotenv())
+_key = os.getenv("OPENAI_API_KEY", "")
+if not _key or _key.startswith("your_"):
+    print("ERROR: OPENAI_API_KEY is missing or still set to the placeholder value.")
+    print("       Edit .env and replace the placeholder with your real key.")
+    sys.exit(1)
+print(f"OPENAI_API_KEY loaded: {_key[:8]}...")
+
 from shiftnotes_agent.graph import graph
 from shiftnotes_agent.logger import get_logger
 
-load_dotenv()
 logger = get_logger("pipeline")
 
 
