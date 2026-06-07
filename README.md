@@ -129,6 +129,35 @@ Operational Dashboard / Reporting
 
 ---
 
+## Quick Start
+
+```bash
+# 1. Clone the repo
+git clone https://github.com/Nana-Loha/ShiftNote-demo.git
+cd ShiftNote-demo
+
+# 2. Install dependencies (requires uv)
+pip install uv
+uv sync
+
+# 3. Configure environment
+cp .env.example .env
+# Edit .env and set OPENAI_API_KEY and GROQ_API_KEY
+
+# 4. Populate ChromaDB (required for RAG / Ask ShiftNotes tab)
+uv run python prototype/rag/embed.py
+
+# 5a. Run the agent pipeline (CLI)
+uv run python run_pipeline.py
+
+# 5b. Run the Streamlit dashboard
+uv run streamlit run streamlit_app.py
+```
+
+> **Note:** `chroma_db/` is generated locally by `embed.py` and is not included in the repo. Run step 4 before using the Ask ShiftNotes or Briefings tabs.
+
+---
+
 ## Documentation Guide
 
 The following documents provide deeper insight into the design, implementation, and evolution of ShiftNotes.
@@ -139,11 +168,9 @@ The following documents provide deeper insight into the design, implementation, 
 | CURRENT_FORM_ANALYSIS.md | Examines the current reporting workflow and identifies opportunities for improvement. |
 | USER_EXPERIENCE.md       | Defines how users interact with the system and consume insights.                      |
 | ARCHITECTURE.md          | Documents system components, data flow, and technical design decisions.               |
-| TECHNICAL_DECISIONS.md   | Explains major implementation choices and tradeoffs.                                  |
-| CURRENT_STATE.md         | Tracks functionality, assumptions, limitations, and known issues.                     |
-| DEMO_SCRIPT.md           | Structured walkthrough for presentations and demonstrations.                          |
-| DEVELOPMENT_LOG.md       | Engineering journal documenting project evolution and implementation progress.        |
-| FUTURE_EXPANSION.md      | Long-term ideas, future capabilities, and potential system growth.                    |
+| SPEC.MD                  | Full product specification including pipeline design and MCP integration plan.        |
+| RISKS.md                 | Known risks with likelihood, impact, and mitigation actions.                          |
+| BACKLOG.md               | Completed and planned work by week.                                                   |
 
 ---
 
@@ -151,17 +178,18 @@ The following documents provide deeper insight into the design, implementation, 
 
 ### Current Phase
 
-* Workflow Analysis
-* Form Evaluation
-* Architecture Design
-* Prototype Planning
+* LangGraph agent pipeline — operational
+* Streamlit dashboard — integrated with agent pipeline
+* ChromaDB RAG — active
+* HITL review — working (accept / drill\_down / escalate)
 
-### Next Milestones
+### Week 9 Priorities
 
-* Analyze current reporting structure
-* Design intelligence pipeline
-* Create synthetic operational dataset
-* Develop passive operational insight layer
+* Wire Gmail MCP OAuth for Node 1 (ingestion) and Node 5 (delivery)
+* Fix HITL invalid input handling
+* Wire escalate path to email shift lead
+* Tune signal classifier on real JotForm data
+* Set up GitHub Actions CI workflow
 
 ---
 
@@ -172,4 +200,3 @@ The goal of ShiftNotes is not to replace existing reporting workflows.
 The goal is to augment them.
 
 By transforming operational reports into structured intelligence, ShiftNotes aims to reduce information loss, improve visibility, and help leadership make better operational decisions using information that already exists within the organization.
-s
