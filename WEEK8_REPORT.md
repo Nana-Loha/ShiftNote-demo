@@ -77,7 +77,7 @@ The development environment is fully reproducible and documented.
 - `CLAUDE.md` updated with project conventions for Claude Code
 - `.env.example` provided for both `OPENAI_API_KEY` and `GROQ_API_KEY`
 - Gmail MCP endpoint configured: `https://gmailmcp.googleapis.com/mcp/v1`
-- CI: GitHub Actions workflow added (`.github/workflows/ci.yml`) — runs `uv run pytest tests/ -v` on every push and PR to `main`; 10/10 tests passing
+- CI: 10 pytest tests passing locally
 
 → See [CLAUDE.md](./CLAUDE.md), [pyproject.toml](./pyproject.toml), [.env.example](./.env.example)
 
