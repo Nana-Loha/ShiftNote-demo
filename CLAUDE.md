@@ -32,10 +32,12 @@ When prompted, enter one of: `accept` | `drill_down` | `escalate`
 
 | Variable | Description |
 |---|---|
-| OPENAI_API_KEY | Your OpenAI API key |
+| OPENAI_API_KEY | Your OpenAI API key (required — pipeline exits if missing) |
+| GROQ_API_KEY | Your Groq API key (used by RAG tab in Streamlit) |
 
 ## Notes
 
-- Gmail MCP integration is stubbed in Node 1 and Node 5
+- Node 1 (ingest_email) reads from CSV — Gmail MCP OAuth not yet wired
+- Node 5 (send_briefing) falls back to file output — Gmail MCP OAuth not yet wired
 - HuggingFace model downloads ~330MB on first run
 - ChromaDB persists to `chroma_db/` folder locally

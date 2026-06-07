@@ -75,9 +75,9 @@ The development environment is fully reproducible and documented.
 
 - `uv` used for dependency management and virtual environment — `pyproject.toml` pins all dependencies including LangGraph, ChromaDB, HuggingFace, Streamlit, and Groq
 - `CLAUDE.md` updated with project conventions for Claude Code
-- `.env.example` provided for environment variable configuration
+- `.env.example` provided for both `OPENAI_API_KEY` and `GROQ_API_KEY`
 - Gmail MCP endpoint configured: `https://gmailmcp.googleapis.com/mcp/v1`
-- CI: 10 pytest tests passing locally — GitHub Actions workflow scoped for Week 9
+- CI: GitHub Actions workflow added (`.github/workflows/ci.yml`) — runs `uv run pytest tests/ -v` on every push and PR to `main`; 10/10 tests passing
 
 → See [CLAUDE.md](./CLAUDE.md), [pyproject.toml](./pyproject.toml), [.env.example](./.env.example)
 
@@ -175,7 +175,7 @@ We documented 12 known risks with likelihood, impact, and mitigation actions.
 ## Repository Structure
 
 ```
-ShiftNotes_V2/
+ShiftNotes/
 ├── WEEK8_REPORT.md         ← this file
 ├── SPEC.MD
 ├── ARCHITECTURE.md
@@ -184,7 +184,11 @@ ShiftNotes_V2/
 ├── CLAUDE.md
 ├── pyproject.toml
 ├── .env.example
+├── .github/
+│   └── workflows/
+│       └── ci.yml          ← GitHub Actions: pytest on push/PR to main
 ├── run_pipeline.py
+├── streamlit_app.py        ← Streamlit dashboard (LangGraph-integrated)
 ├── shiftnotes_agent/
 │   ├── nodes/
 │   │   ├── ingest_email.py
@@ -203,5 +207,5 @@ ShiftNotes_V2/
 ├── tests/
 │   ├── test_signal_classifier.py
 │   └── test_state.py
-└── briefings/              ← generated briefing files
+└── briefings/              ← generated briefing files (gitignored)
 ```
