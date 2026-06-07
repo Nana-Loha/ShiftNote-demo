@@ -12,6 +12,11 @@ if not _key or _key.startswith("your_"):
     sys.exit(1)
 print(f"OPENAI_API_KEY loaded: {_key[:8]}...")
 
+_gmail_token = os.getenv("GMAIL_OAUTH_TOKEN", "")
+_ted_email   = os.getenv("TED_EMAIL", "")
+print(f"GMAIL_OAUTH_TOKEN:     {'set (' + _gmail_token[:6] + '...)' if _gmail_token and not _gmail_token.startswith('your_') else 'NOT SET — will use CSV/file fallback'}")
+print(f"TED_EMAIL:             {_ted_email if _ted_email and not _ted_email.startswith('your_') else 'NOT SET — will default to Ted'}")
+
 from shiftnotes_agent.graph import graph
 from shiftnotes_agent.logger import get_logger
 
