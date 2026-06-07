@@ -45,8 +45,13 @@ def send_briefing(state: ShiftNotesState) -> ShiftNotesState:
 def _send_via_gmail_mcp(briefing: str, run_id: str):
     """
     Sends briefing to Ted's inbox via OpenAI Gmail MCP connector.
-    Falls back to saving file if Gmail MCP fails.
+    Falls back to saving file if token missing or Gmail MCP fails.
     """
+    if not os.getenv("GMAIL_OAUTH_TOKEN"):
+        logger.info("GMAIL_OAUTH_TOKEN not set — saving briefing to file")
+        _save_to_file(briefing, run_id)
+        return
+
     from openai import OpenAI
 
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
