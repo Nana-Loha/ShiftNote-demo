@@ -6,3 +6,5 @@ chroma_db/
 *.egg-info/
 .venv/
 briefings/*.txt
+credentials.json
+client_secret*.json

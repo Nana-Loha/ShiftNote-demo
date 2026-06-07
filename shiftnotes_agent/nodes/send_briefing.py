@@ -69,7 +69,7 @@ def _send_via_gmail_mcp(briefing: str, run_id: str):
                 }
             ],
             input=(
-                f"Send an email to Ted with subject "
+                f"Send an email to {os.getenv('TED_EMAIL', 'Ted')} with subject "
                 f"'ShiftNotes Weekly Briefing — Run {run_id}' "
                 f"and the following body:\n\n{briefing}"
             ),

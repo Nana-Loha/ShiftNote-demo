@@ -35,6 +35,7 @@ When prompted, enter one of: `accept` | `drill_down` | `escalate`
 | OPENAI_API_KEY | Your OpenAI API key (required — pipeline exits if missing) |
 | GROQ_API_KEY | Your Groq API key (used by RAG tab in Streamlit) |
 | GMAIL_OAUTH_TOKEN | OAuth token for OpenAI Gmail MCP connector (optional — falls back to CSV/file if not set) |
+| TED_EMAIL | Recipient email address for Node 5 briefing delivery (optional — falls back to "Ted" if not set) |
 
 ## Notes
 
