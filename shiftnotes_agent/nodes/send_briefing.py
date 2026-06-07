@@ -57,7 +57,7 @@ def _send_via_gmail_mcp(briefing: str, run_id: str):
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
     try:
-        client.responses.create(
+        resp = client.responses.create(
             model="gpt-4o-mini",
             tools=[
                 {
@@ -74,6 +74,10 @@ def _send_via_gmail_mcp(briefing: str, run_id: str):
                 f"and the following body:\n\n{briefing}"
             ),
         )
+        logger.debug(f"MCP raw response — id={resp.id} status={resp.status}")
+        logger.debug(f"MCP output_text: {resp.output_text!r}")
+        for item in getattr(resp, "output", []):
+            logger.debug(f"MCP output item: type={getattr(item, 'type', '?')} content={getattr(item, 'content', getattr(item, 'text', item))!r}")
         logger.info(f"Briefing sent to Ted via Gmail MCP — run_id: {run_id}")
     except Exception as e:
         logger.warning(f"Gmail MCP send failed — falling back to file: {e}")
