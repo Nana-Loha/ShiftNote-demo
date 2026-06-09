@@ -15,41 +15,78 @@
 
 ---
 
-## 1. Peer Review Feedback
+## 1. Peer Review Feedback & HITL Validation Evidence (Non-Team User)
 
-Peer review feedback is currently pending from the class exchange. Our project links were shared with the class for review:
+Peer review conducted by: **Leah, MS in Computer Science, Boise State University**
+Review date: June 7, 2026
 
-- Demo video: https://youtu.be/Qebt9Iho-6Q
-- Live app: https://shiftnote-demo.streamlit.app
-- Code: https://github.com/Nana-Loha/ShiftNote-demo
+Leah cloned the ShiftNote-demo repository, ran the pipeline end-to-end, and tested all three HITL decision paths independently as a non-team user.
 
-Response actions will be documented upon receipt of feedback.
+**Evidence:** See attached `Peer_Review_HITL_validation_ShiftNotes.pdf`
 
----
+**Feedback summary:**
 
-## 2. HITL Validation Evidence (Non-Team User)
+| Area | Observation |
+|------|-------------|
+| Architecture | 6-node LangGraph pipeline is clear and logical; HITL checkpoint placement is appropriate |
+| Quality | Pipeline ran without errors; logging is detailed and well-structured; CSV fallback is a good reliability feature |
+| Risk 1 | Gmail MCP returns 401 authError — email delivery currently simulated via fallback |
+| Risk 2 | HuggingFace classifier detected only 1/54 signals — ML component needs tuning |
+| Risk 3 | HITL stage lacks invalid input validation — unexpected inputs could cause unintended behavior |
+| Risk 4 | RAG retrieval accuracy not measured — recommend adding hit rate / MRR evaluation |
 
-A non-team user (ESL educator, external to the project team) tested the ShiftNotes pipeline via the Streamlit interface at `https://shiftnote-demo.streamlit.app`.
-
-**Validation process:**
-1. User opened the Briefings tab
-2. User clicked "▶ Run Pipeline"
-3. User read the AI-generated briefing
-4. User tested all three HITL decision paths: Approve, Drill Down, and Escalate
-
-**Evidence:** See attached `audit.pdf` — contains screenshots of all three HITL decision states captured during the validation session.
-
-**HITL paths validated:**
+**HITL paths validated by Leah:**
 
 | Decision | Result |
 |----------|--------|
-| Approve | ✅ Decision recorded — pipeline complete |
-| Drill Down | ✅ Decision recorded — detail view available |
+| Accept | ✅ Decision recorded — pipeline complete |
+| Drill Down | ✅ Decision recorded — detail view pending (Week 10) |
 | Escalate | ✅ Decision recorded — escalation captured |
+
+**Response actions:**
+
+| Feedback | Action | Timeline |
+|----------|--------|----------|
+| Gmail MCP 401 | Known limitation — OAuth token incompatibility with OpenAI connector; CSV fallback is production behavior | Week 10 |
+| HuggingFace tuning | Investigate classifier coverage gap; tune on JotForm data | Week 10 |
+| HITL invalid input | Add validation loop to re-prompt until valid decision entered | Week 10 |
+| RAG evaluation | Add hit rate / MRR measurement to retrieval pipeline | Week 10 |
+
+### Pipeline Evidence (Leah's Run)
+
+**Leah's run — accept decision (Run ID: a9f88af9)**
+![Leah accept run complete](screenshot/01_leah_accept_run_complete.jpg)
+
+**Pipeline start — ingest & classify nodes**
+![Pipeline start ingest classify](screenshot/02_pipeline_start_ingest_classify.png)
+
+**detect_signals — regex detection (mid)**
+![Detect signals regex mid](screenshot/03_detect_signals_regex_mid.png)
+
+**detect_signals — HuggingFace + node exit (45/100 reports)**
+![Detect signals huggingface exit](screenshot/04_detect_signals_huggingface_exit.png)
+
+**send_briefing — Gmail MCP 401 authError + fallback**
+![Send briefing Gmail 401 fallback](screenshot/05_send_briefing_gmail_401_fallback.png)
+
+**send_briefing — MCP debug full log**
+![Send briefing MCP debug full](screenshot/06_send_briefing_mcp_debug_full.png)
+
+**send_briefing — node exit**
+![Send briefing node exit](screenshot/07_send_briefing_node_exit.png)
+
+**HITL — accept decision complete (Run ID: 6e5b2934)**
+![HITL accept pipeline complete](screenshot/08_hitl_accept_pipeline_complete.jpg)
+
+**HITL — escalate decision (Run ID: bb7fcbaa)**
+![HITL escalate pipeline complete](screenshot/10_hitl_escalate_pipeline_complete.png)
+
+**HITL — invalid input "no" (Run ID: 095ec71c)**
+![HITL invalid input no](screenshot/09_hitl_invalid_input_no.jpg)
 
 ---
 
-## 3. Backlog Completion Report
+## 2. Backlog Completion Report
 
 ### Week 8 Completed Items (8/8 — 100%) ✅
 
@@ -59,7 +96,7 @@ All Week 8 planned items were completed:
 - Transitioned from Jupyter notebook prototype to LangGraph agent pipeline
 - Defined and implemented 6-node pipeline (ingest_email → classify_intent → detect_signals → retrieve_and_generate → send_briefing → human_review)
 - Documented Gmail MCP integration plan
-- Added RISKS.md with 12 tracked risks
+- Added RISKS.md with 10 tracked risks
 - Populated ChromaDB and validated RAG retrieval
 - Built and validated full LangGraph execution path including HITL checkpoint
 - Integrated LangGraph pipeline into Streamlit UI
@@ -85,7 +122,7 @@ Counting Week 8 (8 items) + Week 9 (3.5/6 items) = **11.5/14 = ~82%** — meets 
 
 ---
 
-## 4. Technical Report Draft (Sections 1–3)
+## 3. Technical Report Draft (Sections 1–3)
 
 ### Section 1: Problem Statement and Business Context
 
@@ -93,7 +130,7 @@ Dsquared Hospitality operates multiple food kiosks at T-Mobile HQ under the Bowl
 
 ShiftNotes is an intelligence layer that automatically reads shift reports, detects operational signals, and delivers a plain-English briefing to Ted — so he spends less time reading and more time acting.
 
-→ See full Section 1 in [TECHNICAL_REPORT_DRAFT.md](https://github.com/Nana-Loha/ShiftNote-demo/blob/main/WEEK8_REPORT.md)
+→ See full Section 1 in [TECHNICAL_REPORT_DRAFT.md](https://github.com/Nana-Loha/ShiftNote-demo/blob/main/TECHNICAL_REPORT_DRAFT.md)
 
 ### Section 2: Architecture and Framework Rationale
 
@@ -125,34 +162,54 @@ ShiftNotes uses a 6-node LangGraph stateful agent pipeline with RAG (ChromaDB + 
 1. Gmail MCP OAuth token compatibility — file fallback active for Week 9
 2. Signal classifier tuned on synthetic data — JotForm tuning planned for Week 10
 3. Streamlit drill-down detail view not yet implemented
-4. HITL invalid input silently accepted — validation pending
+4. HITL invalid input silently accepted — fix planned for Week 10 per peer review
 
 → See [RISKS.md](https://github.com/Nana-Loha/ShiftNote-demo/blob/main/RISKS.md)
 
 ---
 
+
+
 ## Repository Structure
 
 ```
 ShiftNotes/
-├── WEEK8_REPORT.md
-├── SPEC.MD
-├── ARCHITECTURE.md
-├── RISKS.md
-├── BACKLOG.md
-├── CLAUDE.md
-├── pyproject.toml
-├── .env.example
-├── .github/workflows/ci.yml  ← GitHub Actions CI
-├── run_pipeline.py
-├── streamlit_app.py
+├── briefings/
+├── chroma_db/
+├── prototype/
+├── screenshot/                        ← peer review & HITL evidence
 ├── shiftnotes_agent/
 │   ├── nodes/
 │   ├── graph.py
 │   ├── state.py
 │   └── logger.py
-├── prototype/
-└── tests/
+├── tests/
+│   ├── __pycache__/
+│   ├── __init__.py
+│   ├── test_signal_classifier.py
+│   └── test_state.py
+├── .env
+├── .env.example
+├── .gitignore
+├── .python-version
+├── ARCHITECTURE.md
+├── BACKLOG.md
+├── CLAUDE.md
+├── credentials.json
+├── CURRENT_FORM_ANALYSIS.md
+├── generate_gmail_token.py
+├── MOCK_DATA_DESIGN.md
+├── PRODUCT_VISION.md
+├── pyproject.toml
+├── README.md
+├── RISKS.md
+├── run_pipeline.py
+├── SPEC.MD
+├── streamlit_app.py
+├── USER_EXPERIENCE.md
+├── uv.lock
+├── WEEK8_REPORT.md
+└── WEEK9_REPORT.md
 ```
 
 ---

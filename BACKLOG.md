@@ -19,14 +19,20 @@
 - Added `GROQ_API_KEY` to `.env.example` and `CLAUDE.md`.
 - Gitignored generated `briefings/*.txt` files.
 
-## Week 9 — Remaining Priorities
+## Week 9 — Completed and In-Progress Items (Geeta's original plan)
 
-- Wire Gmail MCP OAuth for Node 1 (ingestion) — replace CSV fallback with live Gmail read.
-- Wire Gmail MCP OAuth for Node 5 (delivery) — replace file fallback with Gmail send to Ted.
-- Fix HITL invalid input handling — add validation and retry prompt in `human_review` node and `run_pipeline.py`.
-- Wire escalate path to email shift lead via Gmail MCP (Node 5 Option B).
-- Tune hybrid signal classifier thresholds on real JotForm sample data.
-- Set up GitHub Actions CI workflow (`.github/workflows/ci.yml`) — 10 tests currently passing locally.
+- Populate ChromaDB and validate RAG retrieval — ✅ Done. `retrieve_and_generate.py` working end-to-end.
+- Validate full LangGraph execution path including HITL checkpoint — ✅ Done. All 3 paths (accept, drill_down, escalate) tested end-to-end.
+- Confirm Gmail MCP email delivery — ⚠️ Partial. MCP connector code wired in Node 1 and Node 5; Gmail OAuth token returns 401 due to OpenAI connector incompatibility. CSV/file fallback is active production behavior.
+- Prototype Streamlit drill-down detail view for Ted — ⚠️ Partial. Drill Down button wired in Briefings tab; detail view not yet implemented.
+- Document risks and limitations in RISKS.md — ⚠️ Partial. RISKS.md updated with 10 tracked risks; ongoing.
+- Tune hybrid signal classifier thresholds on real JotForm sample data — ❌ Pending. Still using synthetic mock data. Planned for Week 10.
+
+## Week 9 — Additional Technical Items
+
+- Set up GitHub Actions CI workflow (`.github/workflows/ci.yml`) — ✅ Done. CI runs `uv run pytest tests/ -v` on push and PR to main.
+- Fix HITL invalid input handling — ❌ Pending. `human_review.py` currently silently defaults any invalid input to `accept`. Validation loop planned for Week 10.
+- Wire escalate path to email shift lead via Gmail MCP (Node 5 Option B) — ❌ Pending. Escalation note is captured in state but no email is sent. Planned for Week 10.
 
 ## Week 9 QA Checkpoint Artifacts
 
