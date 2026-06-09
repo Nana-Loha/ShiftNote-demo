@@ -155,14 +155,12 @@ ShiftNotes/
 │   ├── __init__.py
 │   ├── test_signal_classifier.py
 │   └── test_state.py
-├── .env
 ├── .env.example
 ├── .gitignore
 ├── .python-version
 ├── ARCHITECTURE.md
 ├── BACKLOG.md
 ├── CLAUDE.md
-├── credentials.json
 ├── CURRENT_FORM_ANALYSIS.md
 ├── generate_gmail_token.py
 ├── MOCK_DATA_DESIGN.md
