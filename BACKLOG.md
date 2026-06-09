@@ -1,5 +1,13 @@
 # BACKLOG
 
+## Week 7 — Completed Items
+
+- Project kickoff and initial architecture planning
+- Architecture diagram for final project
+- SPEC.md draft and team task backlog
+
+---
+
 ## Week 8 — Completed Items
 
 - Completed the Week 8 checkpoint deliverable by updating the specification and architecture documentation.
@@ -49,3 +57,33 @@ The Week 9 submission will include the following artifacts:
 - Capture non-team HITL validation using a structured checklist and evidence notes.
 - Track completed backlog items as a percentage of planned Week 9 priorities.
 - Draft the first three sections of the technical report to document architecture, implementation, and validation approach.
+
+---
+
+## Week 10 — Final Delivery Requirements
+
+### Required Deliverables
+
+- Codebase: documented, test-covered, reproducible environment
+- README.md: setup, run steps, architecture summary
+- CLAUDE.md: project guidance and workflow context
+- 10-page technical report with the following sections:
+  - Problem statement and business justification
+  - Architecture decisions and framework rationale
+  - Model selection and benchmark evidence
+  - RAG or reasoning pipeline design
+  - Responsible AI analysis (risks and mitigations)
+  - Lessons learned and future work
+
+### Final Presentation and Demo Guide
+
+- 15-minute live demo and presentation
+- 5-minute Q&A
+- All team members must participate
+
+### Required Demo Elements
+
+- End-to-end system run with realistic input
+- One HITL checkpoint in action
+- One failure mode and recovery demonstration
+- Brief walkthrough of architecture and key design choices
