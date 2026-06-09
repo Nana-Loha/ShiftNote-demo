@@ -1,9 +1,9 @@
 import pathlib
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
-from langchain_chroma import Chroma
-from langchain_openai import OpenAIEmbeddings
 from langchain_core.messages import HumanMessage, SystemMessage
+import chromadb
+from sentence_transformers import SentenceTransformer
 
 from shiftnotes_agent.state import ShiftNotesState
 from shiftnotes_agent.logger import get_logger, log_node_entry, log_node_exit, log_error
@@ -11,9 +11,14 @@ from shiftnotes_agent.logger import get_logger, log_node_entry, log_node_exit, l
 load_dotenv()
 logger = get_logger("retrieve_and_generate")
 
-# Lazy-initialized so the module can be imported without OPENAI_API_KEY set
+# Lazy-initialized so the module can be imported without API keys set
 _llm = None
-_embeddings = None
+_embed_model = None
+
+# Must match the collection name and model used in prototype/rag/embed.py
+CHROMA_COLLECTION = "shift_reports"
+_CHROMA_DIR = str(pathlib.Path(__file__).parent.parent.parent / "chroma_db")
+_EMBED_MODEL_NAME = "all-MiniLM-L6-v2"
 
 
 def _get_llm():
@@ -23,16 +28,11 @@ def _get_llm():
     return _llm
 
 
-def _get_embeddings():
-    global _embeddings
-    if _embeddings is None:
-        _embeddings = OpenAIEmbeddings()
-    return _embeddings
-
-# ChromaDB collection name
-CHROMA_COLLECTION = "shiftnotes_reports"
-# Absolute path so it resolves correctly regardless of working directory
-_CHROMA_DIR = str(pathlib.Path(__file__).parent.parent.parent / "chroma_db")
+def _get_embed_model():
+    global _embed_model
+    if _embed_model is None:
+        _embed_model = SentenceTransformer(_EMBED_MODEL_NAME)
+    return _embed_model
 
 
 def retrieve_and_generate(state: ShiftNotesState) -> ShiftNotesState:
@@ -77,29 +77,27 @@ def retrieve_and_generate(state: ShiftNotesState) -> ShiftNotesState:
 
 def _retrieve_context(detected_signals: list[dict]) -> str:
     """
-    Searches ChromaDB for historical reports similar to
-    the signals we just detected.
+    Searches ChromaDB for historical reports similar to the detected signals.
+    Uses the same collection and embedding model as prototype/rag/embed.py.
     """
     try:
-        vectorstore = Chroma(
-            collection_name=CHROMA_COLLECTION,
-            embedding_function=_get_embeddings(),
-            persist_directory=_CHROMA_DIR,
-        )
+        client = chromadb.PersistentClient(path=_CHROMA_DIR)
+        collection = client.get_collection(CHROMA_COLLECTION)
 
-        # Build a query from the detected signals
         signal_names = []
         for report in detected_signals:
             for signal in report.get("signals_found", []):
                 signal_names.append(signal["name"])
 
         query = f"operational issues: {', '.join(set(signal_names))}"
-        docs = vectorstore.similarity_search(query, k=3)
+        query_embedding = _get_embed_model().encode([query]).tolist()
 
+        results = collection.query(query_embeddings=query_embedding, n_results=3)
+
+        docs = results.get("documents", [[]])[0]
         if docs:
-            return "\n".join(d.page_content for d in docs)
-        else:
-            return "No historical context available yet."
+            return "\n".join(docs)
+        return "No historical context available yet."
 
     except Exception:
         # ChromaDB might be empty on first run — that's fine
