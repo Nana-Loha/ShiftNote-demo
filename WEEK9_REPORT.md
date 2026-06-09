@@ -124,47 +124,14 @@ Counting Week 8 (8 items) + Week 9 (3.5/6 items) = **11.5/14 = ~82%** — meets 
 
 ## 3. Technical Report Draft (Sections 1–3)
 
-### Section 1: Problem Statement and Business Context
+The full technical report draft (Sections 1–3) is in a separate document:
 
-Dsquared Hospitality operates multiple food kiosks at T-Mobile HQ under the Bowls & Buns brand. Shift leads submit daily JotForm reports covering food quality, inventory concerns, guest feedback, and employee recognition. Before ShiftNotes, these reports accumulated in the GM (Ted)'s inbox and required manual review to identify patterns.
+→ **[TECHNICAL_REPORT_DRAFT.md](https://github.com/Nana-Loha/ShiftNote-demo/blob/main/TECHNICAL_REPORT_DRAFT.md)**
 
-ShiftNotes is an intelligence layer that automatically reads shift reports, detects operational signals, and delivers a plain-English briefing to Ted — so he spends less time reading and more time acting.
-
-→ See full Section 1 in [TECHNICAL_REPORT_DRAFT.md](https://github.com/Nana-Loha/ShiftNote-demo/blob/main/TECHNICAL_REPORT_DRAFT.md)
-
-### Section 2: Architecture and Framework Rationale
-
-ShiftNotes uses a 6-node LangGraph stateful agent pipeline with RAG (ChromaDB + OpenAI) and a human-in-the-loop checkpoint at Node 6.
-
-**Framework decisions:**
-- **LangGraph** — stateful graph execution, native HITL interrupt, conditional routing
-- **ChromaDB** — lightweight local vector store for RAG retrieval
-- **OpenAI gpt-4o-mini** — briefing generation (cost-efficient, MCP-compatible)
-- **Gmail MCP** — standardized integration for email read/send
-
-**Key design decision:** Send-then-review (not review-then-send) — intelligence comes to Ted passively.
-
-→ See [ARCHITECTURE.md](https://github.com/Nana-Loha/ShiftNote-demo/blob/main/ARCHITECTURE.md)
-
-### Section 3: Implementation Progress and Validation Evidence
-
-**Pipeline validation:**
-- End-to-end pipeline ran successfully (Run ID: `14feff7a`)
-- 100 reports ingested, 45 signals detected across 4 signal types
-- All 3 HITL paths tested: accept ✅, drill_down ✅, escalate ✅
-- CI baseline: 10/10 pytest tests passing ✅
-- GitHub Actions CI: ✅ green badge on push
-
-**CI Evidence:**
-→ https://github.com/Nana-Loha/ShiftNote-demo/actions
-
-**Known limitations:**
-1. Gmail MCP OAuth token compatibility — file fallback active for Week 9
-2. Signal classifier tuned on synthetic data — JotForm tuning planned for Week 10
-3. Streamlit drill-down detail view not yet implemented
-4. HITL invalid input silently accepted — fix planned for Week 10 per peer review
-
-→ See [RISKS.md](https://github.com/Nana-Loha/ShiftNote-demo/blob/main/RISKS.md)
+Sections covered:
+- **Section 1** — Problem Statement and Business Context
+- **Section 2** — Architecture and Framework Rationale (6-node pipeline, framework decisions, signal detection strategy)
+- **Section 3** — Implementation Progress and Validation Evidence (pipeline run, signal counts, HITL paths, CI results, known limitations)
 
 ---
 
