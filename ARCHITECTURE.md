@@ -53,13 +53,12 @@ Ted either accepts, drills down, or escalates
 
 **Role:** Ingests incoming JotForm report emails.
 
-- **Current implementation:** Reads from `mock_shift_notes.csv`
-- **Goal:** Swap the CSV fallback with Gmail MCP reads
+- **Current implementation:** Reads from Gmail MCP when `GMAIL_OAUTH_TOKEN` is set; falls back to `mock_shift_notes.csv` otherwise
 - **Output:** Structured report records added to pipeline state
 
 ### MCP integration point
 
-- Replace `_read_from_csv()` with a Gmail MCP email read call
+- Gmail MCP read is wired via `_read_from_gmail_mcp()` — activate by setting `GMAIL_OAUTH_TOKEN` in `.env`
 - This node is the primary live-input gateway for the agent
 
 ---
@@ -119,10 +118,9 @@ ChromaDB is empty until reports are indexed. When empty, RAG context is unavaila
 
 **Role:** Delivers generated briefings to Ted.
 
-- **Current implementation:** Saves briefings to `briefings/`
-- **Goal:** replace file output with Gmail MCP send
-- **MCP integration point:** `_save_to_file()` → Gmail MCP send call
+- **Current implementation:** Sends via Gmail MCP when `GMAIL_OAUTH_TOKEN` is set; falls back to `briefings/` file output otherwise
 - **Gmail MCP URL:** `https://gmailmcp.googleapis.com/mcp/v1`
+- **MCP integration point:** `_send_via_gmail_mcp()` — activate by setting `GMAIL_OAUTH_TOKEN` and `TED_EMAIL` in `.env`
 
 ---
 
@@ -138,8 +136,8 @@ ChromaDB is empty until reports are indexed. When empty, RAG context is unavaila
 | Decision | Result |
 |----------|--------|
 | `accept` | Ted understands and takes action |
-| `drill_down` | Ted opens Streamlit review interface (pending) |
-| `escalate` | Ted requests source verification, pipeline restarts |
+| `drill_down` | Ted reviews details in Streamlit (button wired; dedicated detail view pending) |
+| `escalate` | Ted requests source verification; escalation note logged (email to shift lead pending) |
 
 This design preserves the product principle that intelligence should be delivered passively and then reviewed, rather than requiring Ted to request it first.
 
@@ -165,7 +163,7 @@ ShiftNotes/
 │   └── logger.py
 ├── briefings/                  ← generated briefing files
 ├── run_pipeline.py            ← pipeline entrypoint
-├── streamlit_app.py           ← future drill-down UI
+├── streamlit_app.py           ← Streamlit dashboard (Briefings + Ask ShiftNotes tabs)
 ├── RISKS.md                   ← known risks list
 ├── SPEC.MD                    ← current specification
 ├── README.md
@@ -185,38 +183,39 @@ ShiftNotes/
 | Zero-shot model | cross-encoder/nli-MiniLM2-L6-H768 |
 | Retrieval | ChromaDB |
 | Briefing generation | OpenAI |
-| Email integration | Gmail MCP (pending) |
-| Drill-down UI | Streamlit (pending) |
+| Email integration | Gmail MCP (wired — requires `GMAIL_OAUTH_TOKEN`) |
+| Drill-down UI | Streamlit (dashboard active; drill-down detail view pending) |
 
 ---
 
 # MCP Integration Points
 
-| Node | Current behavior | MCP target |
+| Node | Current behavior | To activate |
 |------|------------------|------------|
-| Node 1 — ingest_email | CSV read fallback | Gmail MCP email ingestion |
-| Node 5 — send_briefing | Save file in `briefings/` | Gmail MCP send to Ted |
+| Node 1 — ingest_email | Gmail MCP read; CSV fallback when token absent | Set `GMAIL_OAUTH_TOKEN` in `.env` |
+| Node 5 — send_briefing | Gmail MCP send; file fallback when token absent | Set `GMAIL_OAUTH_TOKEN` + `TED_EMAIL` in `.env` |
 
-Both integration points are designed as isolated swaps so that the LangGraph pipeline remains unchanged.
+Both integration points are isolated — the LangGraph pipeline is unchanged regardless of which path runs.
 
 ---
 
 # Current Limitations
 
-- Gmail MCP is not fully wired yet; the pipeline uses CSV stubs for ingestion and file output for briefing delivery.
-- ChromaDB is empty until the first reports are indexed, so RAG retrieval is not available immediately.
+- Gmail MCP requires `GMAIL_OAUTH_TOKEN` to be set; pipeline falls back to CSV/file when the token is absent.
+- ChromaDB is empty until `prototype/rag/embed.py` is run — RAG retrieval returns no context until indexed.
 - The HuggingFace model download is large (~330MB) on first run and requires stable internet.
 - Signal detection thresholds are tuned for synthetic data and may need adjustment for real JotForm reports.
-- The Streamlit drill-down experience is not implemented yet; Option A is still pending.
+- HITL invalid input silently defaults to `accept` in the CLI path.
+- Streamlit drill-down detail view (Option A) is not yet implemented; button is wired but no detail view exists.
+- Escalate path logs the decision but does not email the shift lead (Option B pending).
 
 ---
 
-# Week 9 Priorities
+# Week 9 Remaining
 
-- Populate ChromaDB and validate RAG retrieval.
-- Tune signal thresholds against real JotForm sample data.
-- Prototype the Streamlit drill-down review interface.
-- Validate end-to-end LangGraph execution with HITL.
+- Fix HITL invalid input handling — add validation and retry prompt in CLI path.
+- Wire escalate path to email shift lead via Gmail MCP (Option B).
+- Tune signal classifier thresholds on real JotForm sample data.
 
 ---
 

@@ -44,8 +44,6 @@ It should behave as a passive intelligence layer rather than a new operational b
 ### Out of scope for the prototype
 
 - persistent database storage
-- email delivery or dashboard UI
-- active natural language querying
 - predictive forecasting or autonomous scheduling
 - multi-location comparison beyond the synthetic kiosk dataset
 
@@ -125,7 +123,7 @@ ShiftNotes prototype detects four primary operational signals:
 - `prototype/signal_classifier.py` — hybrid signal detection module
 - `prototype/ShiftNotes_Prototype.ipynb` — end-to-end prototype demonstration
 - `run_pipeline.py` — execution entry point for the pipeline
-- `streamlit_app.py` — future UI integration point
+- `streamlit_app.py` — Streamlit dashboard (Kiosk Summary, Weekly Trends, Briefings, Ask ShiftNotes)
 
 ---
 
@@ -156,19 +154,18 @@ ShiftNotes prototype detects four primary operational signals:
 
 - The dataset is synthetic and not yet validated against real JotForm inputs.
 - Signal detection relies on a small set of hand-authored patterns and a fallback zero-shot model.
-- Gmail MCP is not fully wired; the pipeline currently uses CSV and file output stubs for ingestion and delivery.
-- The UI layer is not built; briefings are generated as plain text files rather than delivered through a production interface.
-- ChromaDB remains empty until reports are indexed; semantic retrieval and RAG are not yet active in the current prototype.
+- Gmail MCP is wired for Node 1 and Node 5; requires `GMAIL_OAUTH_TOKEN` in `.env` to activate — falls back to CSV/file otherwise.
+- Streamlit dashboard is active with 4 tabs; Briefings tab is integrated with the LangGraph pipeline.
+- ChromaDB is populated; RAG retrieval is active via `prototype/rag/embed.py`.
 - First-run HuggingFace model download is large (~330MB), which may slow onboarding.
 - Thresholds for signal detection may require tuning when switched from synthetic data to real shift reports.
+- HITL invalid input silently defaults to `accept` in the CLI path — fix pending.
 
-### Week 9 Priorities
+### Week 9 Remaining
 
-- Wire Gmail MCP for Node 1 ingestion and Node 5 briefing delivery, then validate end-to-end Gmail flows.
-- Populate ChromaDB with indexed reports and verify RAG context is available instead of empty context.
-- Test and tune signal classifier thresholds using sample real JotForm data.
-- Build or prototype a Streamlit drill-down UI to support detail review for Ted.
-- Document known risks, backlog items, and the MCP integration plan for the next checkpoint.
+- Fix HITL invalid input handling — add validation and retry prompt in CLI path.
+- Wire escalate path to email shift lead via Gmail MCP (Option B).
+- Tune signal classifier thresholds on real JotForm sample data.
 
 ---
 

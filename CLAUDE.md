@@ -39,7 +39,7 @@ When prompted, enter one of: `accept` | `drill_down` | `escalate`
 
 ## Notes
 
-- Node 1 (ingest_email) reads from CSV — Gmail MCP OAuth not yet wired
-- Node 5 (send_briefing) falls back to file output — Gmail MCP OAuth not yet wired
+- Node 1 (ingest_email) uses Gmail MCP when `GMAIL_OAUTH_TOKEN` is set; falls back to CSV otherwise
+- Node 5 (send_briefing) sends via Gmail MCP when `GMAIL_OAUTH_TOKEN` is set; falls back to file otherwise
 - HuggingFace model downloads ~330MB on first run
 - ChromaDB persists to `chroma_db/` folder locally
