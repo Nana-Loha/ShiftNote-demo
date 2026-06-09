@@ -111,21 +111,27 @@ The system is designed to:
 
 ---
 
-## Planned Architecture
+## Architecture
+
+The system runs as a 6-node LangGraph pipeline:
 
 ```text
-Operational Reports
+JotForm → Gmail inbox
         ↓
-Processing Layer
+Node 1 — ingest_email        (Gmail MCP / CSV fallback)
         ↓
-Data Enrichment
+Node 2 — classify_intent     (route: signals or RAG query)
         ↓
-Analytics Engine
+Node 3 — detect_signals      (hybrid regex + HuggingFace)
         ↓
-Insight Generation
+Node 4 — retrieve_and_generate  (ChromaDB → OpenAI → briefing)
         ↓
-Operational Dashboard / Reporting
+Node 5 — send_briefing       (Gmail MCP / file fallback)
+        ↓
+Node 6 — human_review (HITL) (accept / drill_down / escalate)
 ```
+
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for full data flow and node responsibilities.
 
 ---
 
@@ -182,14 +188,14 @@ The following documents provide deeper insight into the design, implementation, 
 * Streamlit dashboard — integrated with agent pipeline
 * ChromaDB RAG — active
 * HITL review — working (accept / drill\_down / escalate)
+* Gmail MCP — code wired for Node 1 and Node 5; requires `GMAIL_OAUTH_TOKEN` in `.env`
+* GitHub Actions CI — active (pytest on push/PR to main)
 
-### Week 9 Priorities
+### Week 9 Remaining
 
-* Wire Gmail MCP OAuth for Node 1 (ingestion) and Node 5 (delivery)
-* Fix HITL invalid input handling
-* Wire escalate path to email shift lead
-* Tune signal classifier on real JotForm data
-* Set up GitHub Actions CI workflow
+* Fix HITL invalid input handling — CLI path silently defaults to accept
+* Wire escalate path to email shift lead (Option B)
+* Tune signal classifier thresholds on real JotForm data
 
 ---
 
