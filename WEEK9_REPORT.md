@@ -173,6 +173,7 @@ ShiftNotes/
 ├── run_pipeline.py
 ├── SPEC.MD
 ├── streamlit_app.py
+├── TECHNICAL_REPORT_DRAFT.md
 ├── USER_EXPERIENCE.md
 ├── uv.lock
 ├── WEEK8_REPORT.md

@@ -81,7 +81,7 @@ Node 6 — human_review (HITL)    Ted: accept | drill_down | escalate
 End-to-end pipeline ran successfully (Run ID: `14feff7a`):
 
 - 100 reports ingested from mock CSV
-- 45 signals detected across 4 signal types
+- Signals detected in 45 of 100 reports across 4 signal types
 - All 3 HITL paths tested: accept ✅, drill_down ✅, escalate ✅
 - CI: 10/10 pytest tests passing
 - GitHub Actions CI: green badge on push to main
