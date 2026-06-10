@@ -47,8 +47,10 @@ def _send_via_gmail_mcp(briefing: str, run_id: str):
     Sends briefing to Ted's inbox via OpenAI Gmail MCP connector.
     Falls back to saving file if token missing or Gmail MCP fails.
     """
-    if not os.getenv("GMAIL_OAUTH_TOKEN"):
-        logger.info("GMAIL_OAUTH_TOKEN not set — saving briefing to file")
+    ted_email = os.getenv("TED_EMAIL", "")
+    if not os.getenv("GMAIL_OAUTH_TOKEN") or not ted_email:
+        reason = "GMAIL_OAUTH_TOKEN not set" if not os.getenv("GMAIL_OAUTH_TOKEN") else "TED_EMAIL not set"
+        logger.info(f"{reason} — saving briefing to file")
         _save_to_file(briefing, run_id)
         return
 
@@ -64,14 +66,17 @@ def _send_via_gmail_mcp(briefing: str, run_id: str):
                     "type": "mcp",
                     "server_label": "gmail",
                     "connector_id": "connector_gmail",
-                    "authorization": os.getenv("GMAIL_OAUTH_TOKEN"),
+                    # Bearer prefix required by OpenAI Gmail MCP connector
+                    "authorization": f"Bearer {os.getenv('GMAIL_OAUTH_TOKEN')}",
                     "require_approval": "never",
                 }
             ],
             input=(
-                f"Send an email to {os.getenv('TED_EMAIL', 'Ted')} with subject "
-                f"'ShiftNotes Weekly Briefing — Run {run_id}' "
-                f"and the following body:\n\n{briefing}"
+                f"Use the Gmail send tool to send a new email. "
+                f"Do NOT read, search, or list any emails. Only send.\n"
+                f"To: {ted_email}\n"
+                f"Subject: ShiftNotes Weekly Briefing — Run {run_id}\n"
+                f"Body:\n{briefing}"
             ),
         )
         logger.debug(f"MCP raw response — id={resp.id} status={resp.status}")
