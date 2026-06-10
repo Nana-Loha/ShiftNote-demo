@@ -53,11 +53,13 @@ def retrieve_and_generate(state: ShiftNotesState) -> ShiftNotesState:
                 "generated_briefing": "No operational signals detected this period."
             }
 
+        raw_reports = state.get("raw_reports", [])
+
         # --- Step 1: Retrieve historical context from ChromaDB ---
         retrieved_context = _retrieve_context(detected_signals)
 
         # --- Step 2: Generate briefing with OpenAI ---
-        generated_briefing = _generate_briefing(detected_signals, retrieved_context)
+        generated_briefing = _generate_briefing(detected_signals, raw_reports, retrieved_context)
 
         log_node_exit(logger, "retrieve_and_generate", run_id, "briefing generated")
 
@@ -104,22 +106,24 @@ def _retrieve_context(detected_signals: list[dict]) -> str:
         return "No historical context available yet."
 
 
-def _generate_briefing(detected_signals: list[dict], context: str) -> str:
+def _generate_briefing(detected_signals: list[dict], raw_reports: list[dict], context: str) -> str:
     """
-    Uses OpenAI to generate a plain-English operational briefing
-    from the detected signals and historical context.
+    Uses OpenAI to generate a week-by-week operational briefing
+    matching the structure of the prototype notebook (Step 8).
     """
-    # Summarize signals for the prompt
-    signal_summary = _summarize_signals(detected_signals)
+    weekly_summary = _build_weekly_summary(detected_signals, raw_reports)
 
     system_prompt = """You are an operational intelligence assistant for a hospitality company.
 Your job is to write clear, concise weekly briefings for Ted, the General Manager.
 Write in plain English. Be direct. Focus on what requires attention.
-Format: short paragraphs, no bullet points, under 200 words."""
+Format: one clearly labelled section per week (Week 1:, Week 2:, etc.), under 300 words total."""
 
-    user_prompt = f"""Write a weekly operational briefing based on these detected signals:
+    user_prompt = f"""Write a week-by-week operational briefing based on the data below.
+Include one section per week. For each week state the key signals, highest waste kiosk,
+and one recommended action.
 
-{signal_summary}
+Weekly data:
+{weekly_summary}
 
 Historical context from past reports:
 {context}
@@ -135,27 +139,63 @@ Write the briefing now."""
     return response.content
 
 
-def _summarize_signals(detected_signals: list[dict]) -> str:
-    """Converts detected signals list into readable summary for the prompt."""
-    from collections import Counter
+def _build_weekly_summary(detected_signals: list[dict], raw_reports: list[dict]) -> str:
+    """
+    Groups data by week, matching the prototype notebook Step 6/8 structure.
+    Uses raw_reports for total report count and unclaimed lunches (all reports),
+    and detected_signals for per-signal counts (only flagged reports).
+    """
+    from collections import defaultdict, Counter
 
-    all_signals = []
-    kiosks_affected = []
+    # Total counts per week from ALL reports
+    weekly_totals: dict = defaultdict(lambda: {
+        "total_reports": 0,
+        "unclaimed": 0,
+        "kiosk_waste": Counter(),
+    })
+    for r in raw_reports:
+        week = r.get("week", "Unknown")
+        weekly_totals[week]["total_reports"] += 1
+        weekly_totals[week]["unclaimed"] += int(r.get("number_of_unclaimed_lunches") or 0)
+        weekly_totals[week]["kiosk_waste"][r.get("kiosk", "Unknown")] += int(
+            r.get("number_of_unclaimed_lunches") or 0
+        )
 
+    # Signal counts per week from flagged reports only
+    weekly_signals: dict = defaultdict(lambda: {
+        "chicken_shortage": 0,
+        "poke_request": 0,
+        "ops_issue": 0,
+        "team_recognition": 0,
+    })
     for report in detected_signals:
-        kiosks_affected.append(report.get("kiosk", "Unknown"))
+        week = report.get("week", "Unknown")
         for signal in report.get("signals_found", []):
-            all_signals.append(signal["name"])
+            name = signal["name"]
+            if name in weekly_signals[week]:
+                weekly_signals[week][name] += 1
 
-    counts = Counter(all_signals)
-    kiosk_counts = Counter(kiosks_affected)
+    all_weeks = sorted(
+        set(list(weekly_totals.keys()) + list(weekly_signals.keys())),
+        key=lambda w: (w == "Unknown", w)
+    )
 
     lines = []
-    for signal, count in counts.most_common():
-        lines.append(f"- {signal.replace('_', ' ').title()}: {count} reports")
-
-    lines.append("\nKiosks with signals:")
-    for kiosk, count in kiosk_counts.most_common():
-        lines.append(f"- {kiosk}: {count} reports flagged")
+    for week in all_weeks:
+        totals = weekly_totals[week]
+        signals = weekly_signals[week]
+        top_kiosk = (
+            totals["kiosk_waste"].most_common(1)[0][0]
+            if totals["kiosk_waste"] else "N/A"
+        )
+        lines.append(f"Week {week}:")
+        lines.append(f"  - Reports analyzed: {totals['total_reports']}")
+        lines.append(f"  - Poke requests: {signals['poke_request']}")
+        lines.append(f"  - Chicken shortages: {signals['chicken_shortage']}")
+        lines.append(f"  - Operational issues: {signals['ops_issue']}")
+        lines.append(f"  - Team recognition: {signals['team_recognition']}")
+        lines.append(f"  - Unclaimed lunches: {totals['unclaimed']}")
+        lines.append(f"  - Highest waste kiosk: {top_kiosk}")
+        lines.append("")
 
     return "\n".join(lines)
