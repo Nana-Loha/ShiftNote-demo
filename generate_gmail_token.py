@@ -1,19 +1,16 @@
+from pathlib import Path
 from google_auth_oauthlib.flow import InstalledAppFlow
-from dotenv import set_key
 
-SCOPES = [
-    'https://www.googleapis.com/auth/gmail.readonly',
-    'https://www.googleapis.com/auth/gmail.send'
-]
+SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
+TOKEN_PATH = Path(__file__).parent / "token.json"
+
 
 def generate_token():
-    flow = InstalledAppFlow.from_client_secrets_file(
-        'credentials.json', SCOPES
-    )
+    flow = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES)
     creds = flow.run_local_server(port=0)
-    access_token = creds.token
-    set_key('.env', 'GMAIL_OAUTH_TOKEN', access_token)
-    print(f"Success! GMAIL_OAUTH_TOKEN updated in .env: {access_token[:10]}...")
+    TOKEN_PATH.write_text(creds.to_json())
+    print(f"token.json saved to {TOKEN_PATH}")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     generate_token()
