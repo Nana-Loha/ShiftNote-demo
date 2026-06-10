@@ -7,4 +7,5 @@ chroma_db/
 .venv/
 briefings/*.txt
 credentials.json
+token.json
 client_secret*.json
