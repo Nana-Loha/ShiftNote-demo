@@ -99,8 +99,6 @@ def classify_report(report: dict) -> dict:
         "report_id": report.get("report_id"),
         "kiosk": report.get("kiosk"),
         "date": report.get("date"),
-        "week": report.get("week"),
-        "unclaimed_lunches": report.get("number_of_unclaimed_lunches", 0),
         "has_signal": len(signals_found) > 0,
         "signals_found": signals_found,
         "full_text": text,
