@@ -191,11 +191,6 @@ The following documents provide deeper insight into the design, implementation, 
 * Gmail MCP — code wired for Node 1 and Node 5; requires `GMAIL_OAUTH_TOKEN` in `.env`
 * GitHub Actions CI — active (pytest on push/PR to main)
 
-### Week 9 Remaining
-
-* Fix HITL invalid input handling — CLI path silently defaults to accept
-* Wire escalate path to email shift lead (Option B)
-* Tune signal classifier thresholds on real JotForm data
 
 ---
 
