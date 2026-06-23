@@ -52,7 +52,7 @@ def run():
     for event in graph.stream(initial_state, thread_id):
         for node_name, node_output in event.items():
             if node_name != "__interrupt__":
-                print(f"✓ Node completed: {node_name}")
+                print(f"[OK] Node completed: {node_name}")
 
     # --- Check if we're paused at HITL ---
     snapshot = graph.get_state(thread_id)
@@ -83,7 +83,7 @@ def run():
 
         for event in graph.stream(None, thread_id):
             for node_name, node_output in event.items():
-                print(f"✓ Node completed: {node_name}")
+                print(f"[OK] Node completed: {node_name}")
 
     # --- Final state ---
     final = graph.get_state(thread_id)

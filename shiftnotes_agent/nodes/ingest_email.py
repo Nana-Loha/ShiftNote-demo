@@ -43,6 +43,19 @@ def ingest_email(state: ShiftNotesState) -> ShiftNotesState:
         }
 
 
+def _get_access_token() -> str:
+    """Loads and auto-refreshes the Google OAuth access token from token.json."""
+    from google.auth.transport.requests import Request
+    from google.oauth2.credentials import Credentials
+
+    token_path = Path(__file__).parent.parent.parent / "token.json"
+    creds = Credentials.from_authorized_user_file(str(token_path))
+    if not creds.valid and creds.expired and creds.refresh_token:
+        creds.refresh(Request())
+        token_path.write_text(creds.to_json())
+    return creds.token
+
+
 def _read_from_gmail_mcp() -> list[dict]:
     """
     Reads JotForm shift report emails from Gmail via OpenAI MCP connector.
@@ -59,7 +72,7 @@ def _read_from_gmail_mcp() -> list[dict]:
                 "type": "mcp",
                 "server_label": "gmail",
                 "connector_id": "connector_gmail",
-                "authorization": os.getenv("GMAIL_OAUTH_TOKEN"),
+                "authorization": _get_access_token(),
                 "require_approval": "never",
             }
         ],
