@@ -113,27 +113,20 @@ The system is designed to:
 
 ## Architecture
 
-The system runs as a 6-node LangGraph pipeline:
-
-```text
-JotForm → Gmail inbox
+JotForm submissions
         ↓
-Node 1 — ingest_email        (Gmail MCP / CSV fallback)
+Node 1 — ingest_email        (JotForm MCP via OpenAI connector / CSV fallback)
         ↓
 Node 2 — classify_intent     (route: signals or RAG query)
         ↓
-Node 3 — detect_signals      (hybrid regex + HuggingFace)
+Node 3 — detect_signals      (hybrid regex + zero-shot classifier)
         ↓
 Node 4 — retrieve_and_generate  (ChromaDB → OpenAI → briefing)
         ↓
-Node 5 — send_briefing       (Gmail MCP / file fallback)
+Node 5 — send_briefing       (Gmail API / file fallback)
         ↓
 Node 6 — human_review (HITL) (accept / drill_down / escalate)
 ```
-
-See [ARCHITECTURE.md](./ARCHITECTURE.md) for full data flow and node responsibilities.
-
----
 
 ## Quick Start
 
@@ -148,19 +141,26 @@ uv sync
 
 # 3. Configure environment
 cp .env.example .env
-# Edit .env and set OPENAI_API_KEY and GROQ_API_KEY
+# Edit .env and set: OPENAI_API_KEY, GROQ_API_KEY, TED_EMAIL
 
 # 4. Populate ChromaDB (required for RAG / Ask ShiftNotes tab)
 uv run python prototype/rag/embed.py
 
-# 5a. Run the agent pipeline (CLI)
-uv run python run_pipeline.py
+# 5. Set up Gmail sending (one time) — see TEAMMATE_SETUP_GUIDE.md
+#    Requires credentials.json in the project root, then:
+uv run python generate_gmail_token.py
 
-# 5b. Run the Streamlit dashboard
+# 6a. Run the agent pipeline (CLI)
+uv run python run_pipeline.py
+#    When prompted, enter: accept | drill_down | escalate
+
+# 6b. Run the Streamlit dashboard
 uv run streamlit run streamlit_app.py
 ```
 
 > **Note:** `chroma_db/` is generated locally by `embed.py` and is not included in the repo. Run step 4 before using the Ask ShiftNotes or Briefings tabs.
+
+> **Gmail sending:** If `TED_EMAIL`, `credentials.json`, or `token.json` is not set up, the briefing is saved to the `briefings/` folder instead of emailed. This is expected fallback behavior. See `TEAMMATE_SETUP_GUIDE.md` for full setup.
 
 ---
 
@@ -187,9 +187,29 @@ The following documents provide deeper insight into the design, implementation, 
 * LangGraph agent pipeline — operational
 * Streamlit dashboard — integrated with agent pipeline
 * ChromaDB RAG — active
-* HITL review — working (accept / drill\_down / escalate)
-* Gmail MCP — code wired for Node 1 and Node 5; requires `GMAIL_OAUTH_TOKEN` in `.env`
+* HITL review — working (accept / drill_down / escalate), with input validation
+* JotForm MCP — Node 1 wired via OpenAI MCP connector; uses CSV fallback until live form is provisioned
+* Gmail API — Node 5 sends real briefing emails; file fallback when unconfigured
 * GitHub Actions CI — active (pytest on push/PR to main)
+
+## Known Limitations
+
+* The live JotForm form is not yet provisioned; the pipeline runs on a synthetic dataset of 100 reports. Activating live ingestion requires setting `JOTFORM_OAUTH_TOKEN` and `JOTFORM_FORM_ID`.
+* Gmail sending runs in OAuth testing mode, limited to approved test users. Production use would require app verification or a service account.
+* The Streamlit drill-down interface (HITL "drill_down" option) is partially implemented.
+* Signal detection thresholds are tuned on synthetic data and would need calibration on real submissions.
+
+See [RISKS.md](./RISKS.md) for the full risk register.
+
+## Demo Path
+
+A complete end-to-end run for demonstration:
+
+1. `uv run python run_pipeline.py`
+2. Pipeline ingests 100 reports, detects signals in ~45, generates a briefing
+3. Briefing is emailed to `TED_EMAIL` via the Gmail API
+4. Pipeline pauses at the HITL checkpoint
+5. Enter an invalid value to show input rejection, then enter `accept` to complete
 
 
 ---
