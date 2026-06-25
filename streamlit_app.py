@@ -14,6 +14,9 @@ import pathlib
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # ── Path setup ────────────────────────────────────────────────────────────────
 PROTO_DIR   = pathlib.Path(__file__).parent / "prototype"
@@ -56,6 +59,20 @@ def run_signal_detection(_df_hash, df_json: str) -> str:
     result = apply_to_dataframe(df, text_col="full_text")
     return result.to_json()
 
+
+def get_config_value(key: str) -> tuple[str, str | None]:
+    """Read config from environment first, then optional Streamlit secrets."""
+    env_value = os.getenv(key, "")
+    if env_value:
+        return env_value, ".env"
+
+    try:
+        secret_value = st.secrets.get(key, "")
+    except st.errors.StreamlitSecretNotFoundError:
+        return "", None
+
+    return secret_value, "secrets" if secret_value else None
+
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.title("📋 ShiftNotes")
@@ -71,13 +88,10 @@ with st.sidebar:
 
     st.divider()
     st.subheader("RAG Settings")
-    try:
-        _groq_secret = st.secrets.get("GROQ_API_KEY", "")
-    except Exception:
-        _groq_secret = ""
+    _groq_secret, _groq_source = get_config_value("GROQ_API_KEY")
     if _groq_secret:
         api_key = _groq_secret
-        st.caption("Groq API Key: loaded from secrets")
+        st.caption(f"Groq API Key: loaded from {_groq_source}")
     else:
         api_key = st.text_input("Groq API Key", type="password",
                                  help="Free at groq.com — required for the Ask ShiftNotes tab.")
@@ -85,18 +99,16 @@ with st.sidebar:
 
     st.divider()
     st.subheader("Agent Settings")
-    try:
-        _openai_secret = st.secrets.get("OPENAI_API_KEY", "")
-    except Exception:
-        _openai_secret = ""
+    _openai_secret, _openai_source = get_config_value("OPENAI_API_KEY")
     if _openai_secret:
         openai_api_key = _openai_secret
-        st.caption("OpenAI API Key: loaded from secrets")
+
+        st.caption(f"OpenAI API Key: loaded from {_openai_source}")
     else:
         openai_api_key = st.text_input("OpenAI API Key", type="password",
                                         help="Required to run the LangGraph pipeline in the Briefings tab.")
 
-# ── Load data ─────────────────────────────────────────────────────────────────
+#  Load data 
 if use_mock == "Mock dataset":
     raw_df = pd.read_csv(MOCK_CSV)
 elif uploaded_file is not None:
@@ -136,7 +148,7 @@ weekly_summary = df_signals.groupby("week").agg(
     ops_issues        = ("ops_issue_mention",          "sum"),
 ).reset_index().sort_values("week")
 
-# ── Tabs ──────────────────────────────────────────────────────────────────────
+#  Tabs 
 tab1, tab2, tab3, tab4 = st.tabs([
     "📊 Kiosk Summary",
     "📈 Weekly Trends",
@@ -144,7 +156,7 @@ tab1, tab2, tab3, tab4 = st.tabs([
     "💬 Ask ShiftNotes",
 ])
 
-# ── Tab 1: Kiosk Summary ──────────────────────────────────────────────────────
+# ── Tab 1: Kiosk Summary 
 with tab1:
     st.header("Kiosk Summary")
     st.caption(f"{len(df_signals)} reports across {df_signals['kiosk'].nunique()} kiosks")

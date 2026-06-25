@@ -5,7 +5,7 @@ __pycache__/
 chroma_db/
 *.egg-info/
 .venv/
-briefings/*.txt
+briefings/
 credentials.json
 token.json
 client_secret*.json
