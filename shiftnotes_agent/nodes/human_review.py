@@ -33,10 +33,16 @@ def human_review(state: ShiftNotesState) -> ShiftNotesState:
         })
 
         # Parse Ted's decision
+        # Validation already happened at the prompt (run_pipeline), 
+        # so an invalid value here means something went wrong
         decision = ted_response.get("decision", "").lower().strip()
 
         if decision not in ["accept", "drill_down", "escalate"]:
-            decision = "accept"  # default if unclear
+            log_error(logger, "human_review", run_id, f"invalid decision received: '{decision}'")
+            return {
+                **state,
+                "error": f"human_review received invalid decision: '{decision}'"
+            }
 
         escalation_note = ted_response.get("note", "") if decision == "escalate" else None
 

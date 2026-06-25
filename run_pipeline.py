@@ -66,13 +66,22 @@ def run():
         briefing = snapshot.values.get("generated_briefing", "")
         print(f"\nBRIEFING PREVIEW:\n{briefing[:300]}...\n")
 
-        # Get Ted's decision
+        # Get Ted's decision until valid (HITL input validation)
+        valid_options = ["accept", "drill_down", "escalate"]
         print("Ted's options: accept | drill_down | escalate")
+
         decision = input("Enter Ted's decision: ").strip().lower()
+        while decision not in valid_options:
+            print(f"  '{decision}' is not a valid option.")
+            print("  Please enter exactly one of: accept | drill_down | escalate")
+            decision = input("Enter Ted's decision: ").strip().lower()
 
         note = ""
         if decision == "escalate":
             note = input("Enter escalation note: ").strip()
+            while not note:
+                print("  An escalation note is required when escalating.")
+                note = input("Enter escalation note: ").strip()
 
         # --- Resume graph with Ted's decision ---
         graph.update_state(
