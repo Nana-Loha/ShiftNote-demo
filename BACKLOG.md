@@ -95,3 +95,160 @@
 - One HITL checkpoint in action (show invalid input rejection, then valid decision)
 - One failure mode and recovery demonstration (Gmail fallback to file)
 - Brief walkthrough of architecture and key design choices
+
+---
+
+## Week 11 — Final Presentation and Submission
+
+### Submission Status
+
+- Final codebase submitted ✅ — Jun 26, 2026 6:09pm
+- GitHub repo: https://github.com/Nana-Loha/ShiftNote-demo
+- Technical report PDF: `ShiftNotes_Technical_Report.pdf` (11 pages, all 6 sections)
+
+### Final Requirements Cross-Check
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| Codebase: documented | ✅ | ARCHITECTURE.md, SPEC.MD, RISKS.md, BACKLOG.md, CLAUDE.md |
+| Codebase: test-covered | ✅ | 10/10 pytest tests passing; CI green on push to main |
+| Codebase: reproducible environment | ✅ | `uv.lock` + `pyproject.toml` pin all dependencies |
+| README.md: setup and run steps | ✅ | Quick Start section with 6 steps |
+| README.md: architecture summary | ✅ | 6-node pipeline diagram in README |
+| CLAUDE.md: project guidance | ✅ | Setup, structure, env vars, run instructions |
+| Technical report: problem statement | ✅ | Section 1 — Business Context (Dsquared Hospitality) |
+| Technical report: architecture decisions | ✅ | Section 2 — LangGraph, ChromaDB, MCP rationale |
+| Technical report: model selection & benchmarks | ✅ | Section 2 — model table + confidence thresholds |
+| Technical report: RAG pipeline design | ✅ | Section 2 + 3 — ChromaDB → OpenAI → briefing |
+| Technical report: responsible AI | ✅ | RISKS.md + technical report section on risks |
+| Technical report: lessons learned | ✅ | Final section of technical report |
+| Demo path documented | ✅ | README "Demo Path" section |
+| Known limitations listed | ✅ | README "Known Limitations" section |
+
+### Presentation Demo Script (15 minutes)
+
+> Legend: [SLIDE] = presentation slide · [LIVE] = VS Code / terminal · (Speaker N) = suggested presenter
+
+---
+
+#### PART 1 — Opening Slides (3 min)
+
+**Slide 1 — Title (15 sec) — (Speaker 1)**
+Introduce the team and preview: problem, architecture, live run, failure handling.
+
+**Slide 2 — The Problem (45 sec) — (Speaker 1)**
+- Shift leads submit JotForm reports covering food quality, inventory, guest feedback, staff recognition
+- Reports pile up — manager reads every one by hand to spot patterns
+- Cross-location trends (e.g. chicken shortage across kiosks) get missed
+- Guiding principle: *the intelligence comes to the manager, not the other way around*
+
+**Slide 3 — Architecture (75 sec) — (Speaker 1)**
+Show the 6-node pipeline diagram.
+- Node 1: JotForm MCP ingestion (CSV fallback)
+- Node 2: intent classification
+- Node 3: hybrid signal detection (regex first, zero-shot fallback)
+- Node 4: ChromaDB retrieval → OpenAI → briefing
+- Node 5: Gmail API delivery
+- Node 6: HITL checkpoint (accept / drill_down / escalate)
+
+**Slide 4 — Model and Tool Choices (45 sec) — (Speaker 2)**
+- `gpt-4o-mini` at low temperature for factual summarization
+- Zero-shot classifier — no labeled training data required
+- Compact sentence-embedding model with ChromaDB for retrieval
+- Responsible AI: human in control of every decision; logs record regex vs. model per signal; briefing grounded in retrieved history; secrets out of version control
+
+---
+
+#### PART 2 — Live Demo in VS Code (8 min)
+
+**Transition — (Speaker 2):** "Rather than tell you it works, let's run it."
+
+**Step 1 — Project structure (45 sec) — (Speaker 2)**
+[LIVE] Expand `shiftnotes_agent/nodes/` in VS Code.
+- Each node is its own file; `graph.py` wires them; `state.py` holds shared state; `logger.py` handles structured logging
+
+**Step 2 — Run the pipeline (90 sec) — (Speaker 2)**
+[LIVE]
+```bash
+uv run python run_pipeline.py
+```
+Narrate the structured logs as nodes execute:
+- Node 1: loads 100 reports from synthetic CSV (JotForm MCP fallback — token not set)
+- Node 2: sets intent
+- Node 3: signals detected — ~45/100 reports flagged; each logged with regex or zero-shot source
+- Node 4: retrieves context, generates briefing
+- Node 5: sends via Gmail API
+
+**Step 3 — Show the real briefing email (90 sec) — (Speaker 3)**
+[LIVE] Switch to Gmail inbox in browser.
+- Real email: subject `ShiftNotes Weekly Briefing — Run <id>`
+- Body: plain-English summary (18 poke requests, 16 team recognitions, 15 chicken shortage flags, kiosks with most flags)
+- "This is what the manager opens instead of reading 100 reports."
+
+**Step 4 — HITL checkpoint + failure/recovery (3 min) — (Speaker 3)**
+[LIVE] Terminal is paused at the human review prompt.
+
+"The pipeline has paused. The briefing is already delivered — review happens after delivery on purpose, so the manager doesn't have to approve a draft just to read it."
+
+Type an invalid input first:
+```
+nah uh
+```
+"The system rejects it and re-prompts. In the original version any unrecognized input was silently treated as acceptance — a typo would be recorded as approval with no indication. We identified that as an unsafe failure mode and fixed it. That's the failure and recovery: a hidden failure turned into a visible, correctable one."
+
+Then enter a valid decision:
+```
+accept
+```
+"The graph resumes from exactly where it paused, records the decision, and completes."
+
+**Step 5 — Second failure path (30 sec) — (Speaker 3)** *(mention only if time allows)*
+"If Gmail credentials or `TED_EMAIL` aren't configured, Node 5 falls back to saving the briefing as a file instead of crashing. Every external integration has a controlled fallback — the pipeline always completes."
+
+---
+
+#### PART 3 — Closing Slides (3 min)
+
+**Slide 5 — Failure Modes and Observability (45 sec) — (Speaker 1)**
+- Shared `error` field in pipeline state — any node that fails writes into it; downstream nodes stop gracefully
+- Real example: empty cells read as numbers broke signal detection; logging caught it; diagnosed from logs; fixed and regression test added
+
+**Slide 6 — Testing and CI (30 sec) — (Speaker 2)**
+- 10/10 pytest tests covering signal classifier and state definition
+- GitHub Actions runs tests on every push to main
+
+**Slide 7 — Team Process and Lessons Learned (45 sec) — (Speaker 2)**
+- Committed directly to main → merge conflicts on shared files
+- Lesson: work on branches, pull before working, merge via reviewed PRs, divide file ownership
+
+**Slide 8 — Known Limitations and Next Steps (45 sec) — (Speaker 3)**
+- Live JotForm form not yet provisioned — activating it is a config change, not a code change
+- Gmail OAuth in testing mode — production needs app verification or service account
+- Drill-down interface partially built
+- Next steps: live form, production auth, finish drill-down, tune thresholds on real submissions
+
+**Slide 9 — Close (15 sec) — (Speaker 1)**
+"ShiftNotes ingests reports, detects signals, delivers a briefing by email, and keeps a human in control — all orchestrated by LangGraph and observable end to end. Thank you."
+
+---
+
+#### Pre-Recording Checklist
+
+1. `git pull origin main` — ensure latest code
+2. `uv sync` — confirm dependencies installed
+3. Confirm `.env` has `OPENAI_API_KEY` and `TED_EMAIL` set
+4. Confirm `credentials.json` and `token.json` in project root (Gmail sending works)
+5. Run the pipeline once in advance to warm up model download and confirm email lands; delete that test email so inbox is clean
+6. Have Gmail inbox open in a browser tab, signed in, ready to switch to
+7. Increase terminal font size so logs are readable on video
+8. Record a backup run in advance — if the live run fails (network, API hiccup), fall back to the backup
+
+#### Timing Summary
+
+| Segment | Time |
+|---|---|
+| Part 1 — Opening slides | 3:00 |
+| Part 2 — Live demo | 8:00 |
+| Part 3 — Closing slides | 3:00 |
+| Buffer | 1:00 |
+| **Total** | **15:00** |
