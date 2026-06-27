@@ -10,7 +10,7 @@
 
 **Team:** Pitchanan Lohavanichbutr, Geetanjali Kulkarni, Careen Mollel
 
-| Deliverable | Link |  
+| Deliverable | Link |
 |---|---|
 | Codebase (this repo) | [github.com/Nana-Loha/ShiftNote-demo](https://github.com/Nana-Loha/ShiftNote-demo) |
 | README.md | [README.md](./README.md) — setup, run steps, architecture summary |
@@ -141,7 +141,6 @@ The system is designed to:
 
 ## Architecture
 
-```text
 JotForm submissions
         ↓
 Node 1 — ingest_email        (JotForm MCP via OpenAI connector / CSV fallback)
@@ -175,7 +174,7 @@ cp .env.example .env
 # 4. Populate ChromaDB (required for RAG / Ask ShiftNotes tab)
 uv run python prototype/rag/embed.py
 
-# 5. Set up Gmail sending (one time) — see GMAIL_SETUP.md
+# 5. Set up Gmail sending (one time) — see TEAMMATE_SETUP_GUIDE.md
 #    Requires credentials.json in the project root, then:
 uv run python generate_gmail_token.py
 
@@ -189,7 +188,7 @@ uv run streamlit run streamlit_app.py
 
 > **Note:** `chroma_db/` is generated locally by `embed.py` and is not included in the repo. Run step 4 before using the Ask ShiftNotes or Briefings tabs.
 
-> **Gmail sending:** If `TED_EMAIL`, `credentials.json`, or `token.json` is not set up, the briefing is saved to the `briefings/` folder instead of emailed. This is expected fallback behavior. See [GMAIL_SETUP.md](./GMAIL_SETUP.md) for full setup.
+> **Gmail sending:** If `TED_EMAIL`, `credentials.json`, or `token.json` is not set up, the briefing is saved to the `briefings/` folder instead of emailed. This is expected fallback behavior. See `TEAMMATE_SETUP_GUIDE.md` for full setup.
 
 ---
 
@@ -200,7 +199,7 @@ The following documents provide deeper insight into the design, implementation, 
 | Document                 | Purpose                                                                               |
 | ------------------------ | ------------------------------------------------------------------------------------- |
 | PRODUCT_VISION.md        | Defines the purpose, philosophy, goals, and future direction of ShiftNotes.           |
-| CURRENT_FORM_ANALYSIS.md | Examines the current reporting workflow and identifies opportunities for improvement. |
+| CURRENT_FORM_ANALYSIS.md | Examines the current reporting workflow and identifies opportunity for improvement. |
 | USER_EXPERIENCE.md       | Defines how users interact with the system and consume insights.                      |
 | ARCHITECTURE.md          | Documents system components, data flow, and technical design decisions.               |
 | SPEC.MD                  | Full product specification including pipeline design and MCP integration plan.        |
