@@ -1,6 +1,6 @@
 # ShiftNotes — Gmail API Setup Guide
 
-**For teammates cloning from `https://github.com/wanlemvo/ShiftNotes`**
+**For teammates cloning from `https://github.com/Nana-Loha/ShiftNote-demo`**
 
 ---
 
@@ -22,8 +22,8 @@ The original ShiftNotes used OpenAI's MCP Gmail connector (controlled by `GMAIL_
 ## Step 1 — Clone and install dependencies
 
 ```bash
-git clone https://github.com/wanlemvo/ShiftNotes
-cd ShiftNotes
+git clone https://github.com/Nana-Loha/ShiftNote-demo.git
+cd ShiftNote-demo
 pip install uv          # if you don't have uv yet
 uv sync
 ```
