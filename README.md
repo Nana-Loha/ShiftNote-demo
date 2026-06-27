@@ -239,6 +239,11 @@ A complete end-to-end run for demonstration:
 4. Pipeline pauses at the HITL checkpoint
 5. Enter an invalid value to show input rejection, then enter `accept` to complete
 
+## Demo Video
+
+[![ShiftNotes Demo](https://img.youtube.com/vi/zINqPPPskt4/maxresdefault.jpg)](https://youtu.be/zINqPPPskt4)
+
+A full walkthrough of the ShiftNotes pipeline: end-to-end run, the human-in-the-loop checkpoint, failure recovery, and the drill-down dashboard.
 
 ---
 
