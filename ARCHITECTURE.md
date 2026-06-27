@@ -4,7 +4,7 @@
 
 This document describes the current ShiftNotes architecture after the Week 8 transition from a notebook prototype to a LangGraph agent pipeline.
 
-ShiftNotes is now explicitly designed as a six-node LangGraph workflow with a human-in-the-loop checkpoint, JotForm MCP ingestion, and Gmail API delivery.
+ShiftNotes is now explicitly designed as a six-node LangGraph workflow with a human-in-the-loop checkpoint and Gmail MCP integration points.
 
 ---
 
@@ -28,7 +28,7 @@ The architecture is intentionally modular, with clear separation between:
 ```text
 Shift lead writes report
     ↓
-JotForm submission
+JotForm → Gmail inbox
     ↓
 Node 1 — ingest_email
     ↓
@@ -51,15 +51,14 @@ Ted either accepts, drills down, or escalates
 
 ## Node 1 — ingest_email
 
-**Role:** Ingests JotForm shift report submissions.
+**Role:** Ingests incoming JotForm report emails.
 
-- **Current implementation:** Reads from JotForm MCP when `JOTFORM_OAUTH_TOKEN` and `JOTFORM_FORM_ID` are set; falls back to `mock_shift_notes.csv` otherwise
+- **Current implementation:** Reads from Gmail MCP when `GMAIL_OAUTH_TOKEN` is set; falls back to `mock_shift_notes.csv` otherwise
 - **Output:** Structured report records added to pipeline state
 
 ### MCP integration point
 
-- JotForm MCP read is wired via `_read_from_jotform_mcp()` using the official JotForm MCP server (`https://mcp.jotform.com`) via the OpenAI Responses API connector
-- Activate by setting `JOTFORM_OAUTH_TOKEN` and `JOTFORM_FORM_ID` in `.env`
+- Gmail MCP read is wired via `_read_from_gmail_mcp()` — activate by setting `GMAIL_OAUTH_TOKEN` in `.env`
 - This node is the primary live-input gateway for the agent
 
 ---
@@ -119,8 +118,9 @@ ChromaDB is empty until reports are indexed. When empty, RAG context is unavaila
 
 **Role:** Delivers generated briefings to Ted.
 
-- **Current implementation:** Sends via Gmail API (`google-api-python-client`) when `TED_EMAIL`, `credentials.json`, and `token.json` are present; falls back to `briefings/` file output otherwise
-- **Gmail setup:** run `generate_gmail_token.py` once to create `token.json`; see `GMAIL_SETUP.md` for full instructions
+- **Current implementation:** Sends via Gmail MCP when `GMAIL_OAUTH_TOKEN` is set; falls back to `briefings/` file output otherwise
+- **Gmail MCP URL:** `https://gmailmcp.googleapis.com/mcp/v1`
+- **MCP integration point:** `_send_via_gmail_mcp()` — activate by setting `GMAIL_OAUTH_TOKEN` and `TED_EMAIL` in `.env`
 
 ---
 
@@ -183,18 +183,17 @@ ShiftNotes/
 | Zero-shot model | cross-encoder/nli-MiniLM2-L6-H768 |
 | Retrieval | ChromaDB |
 | Briefing generation | OpenAI |
-| Email delivery | Gmail API (`google-api-python-client`) |
-| Report ingestion | JotForm MCP via OpenAI Responses API connector |
+| Email integration | Gmail MCP (wired — requires `GMAIL_OAUTH_TOKEN`) |
 | Drill-down UI | Streamlit (dashboard active; drill-down detail view pending) |
 
 ---
 
-# Integration Points
+# MCP Integration Points
 
 | Node | Current behavior | To activate |
 |------|------------------|------------|
-| Node 1 — ingest_email | JotForm MCP read via OpenAI connector; CSV fallback when tokens absent | Set `JOTFORM_OAUTH_TOKEN` + `JOTFORM_FORM_ID` in `.env` |
-| Node 5 — send_briefing | Gmail API send; file fallback when credentials absent | Set `TED_EMAIL` in `.env`; place `credentials.json` + `token.json` in project root |
+| Node 1 — ingest_email | Gmail MCP read; CSV fallback when token absent | Set `GMAIL_OAUTH_TOKEN` in `.env` |
+| Node 5 — send_briefing | Gmail MCP send; file fallback when token absent | Set `GMAIL_OAUTH_TOKEN` + `TED_EMAIL` in `.env` |
 
 Both integration points are isolated — the LangGraph pipeline is unchanged regardless of which path runs.
 
@@ -202,13 +201,21 @@ Both integration points are isolated — the LangGraph pipeline is unchanged reg
 
 # Current Limitations
 
-- Live JotForm form not yet provisioned — pipeline runs on synthetic CSV until `JOTFORM_OAUTH_TOKEN` and `JOTFORM_FORM_ID` are set.
-- Gmail sending runs in OAuth testing mode — limited to approved test users; production requires app verification or a service account.
+- Gmail MCP requires `GMAIL_OAUTH_TOKEN` to be set; pipeline falls back to CSV/file when the token is absent.
 - ChromaDB is empty until `prototype/rag/embed.py` is run — RAG retrieval returns no context until indexed.
 - The HuggingFace model download is large (~330MB) on first run and requires stable internet.
 - Signal detection thresholds are tuned for synthetic data and may need adjustment for real JotForm reports.
-- Streamlit drill-down detail view (HITL "drill_down" option) is not yet implemented; button is wired but no detail view exists.
-- Escalate path logs the decision but does not email the shift lead.
+- HITL invalid input silently defaults to `accept` in the CLI path.
+- Streamlit drill-down detail view (Option A) is not yet implemented; button is wired but no detail view exists.
+- Escalate path logs the decision but does not email the shift lead (Option B pending).
+
+---
+
+# Week 9 Remaining
+
+- Fix HITL invalid input handling — add validation and retry prompt in CLI path.
+- Wire escalate path to email shift lead via Gmail MCP (Option B).
+- Tune signal classifier thresholds on real JotForm sample data.
 
 ---
 
