@@ -2,9 +2,15 @@
 
 ## Week 7 — Completed Items
 
-- Project kickoff and initial architecture planning
-- Architecture diagram for final project
-- SPEC.md draft and team task backlog
+- Created initial project documentation: `PRODUCT_VISION.md`, `CURRENT_FORM_ANALYSIS.md`, `USER_EXPERIENCE.md`, `MOCK_DATA_DESIGN.md`, and `README.md` — established the business context, problem statement, user roles (Ted as GM, shift leads), and design philosophy.
+- Designed and generated synthetic mock dataset: `prototype/mock_shift_notes.csv` — 100 shift reports across 6 kiosks (A–F) with realistic field coverage including food quality ratings, inventory concerns, guest feedback, and staffing notes.
+- Built Jupyter notebook prototype `prototype/ShiftNotes_Prototype.ipynb` — end-to-end signal detection pipeline with kiosk summary aggregation, weekly trend analysis, and ground truth validation.
+- Implemented hybrid signal classifier `prototype/signal_classifier.py` — regex layer for deterministic signals (chicken shortage, poke request, ops issues, team recognition) with HuggingFace zero-shot fallback (`cross-encoder/nli-MiniLM2-L6-H768`) and per-signal confidence thresholds to prevent overfiring. All 7/7 ground truth checks passing.
+- Built RAG prototype: `prototype/embed.py` (ChromaDB ingestion) and `prototype/retriever.py` (semantic retrieval) — embedded all 100 mock reports into ChromaDB for the Ask ShiftNotes tab.
+- Built Streamlit RAG app `prototype/app.py` — interactive Ask ShiftNotes interface with structured logging, HITL approval gate placeholder, and MCP tool layer stub. Validated RAG retrieval returning 5 source reports per query with contextual answers via Groq.
+- Created `ARCHITECTURE.md` — documented the 6-node LangGraph pipeline architecture with data flow, node responsibilities, MCP integration points, and HITL design before implementation began.
+- Drafted initial `SPEC.MD` — product specification covering problem statement, user needs, signal definitions, pipeline design, and MCP integration plan.
+- Created team task backlog in `BACKLOG.md` and refactored `rag/` folder into `prototype/` for cleaner project structure.
 
 ---
 
