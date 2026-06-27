@@ -31,43 +31,45 @@
 
 - Populate ChromaDB and validate RAG retrieval — ✅ Done. `retrieve_and_generate.py` working end-to-end.
 - Validate full LangGraph execution path including HITL checkpoint — ✅ Done. All 3 paths (accept, drill_down, escalate) tested end-to-end.
-- Confirm Gmail MCP email delivery — ⚠️ Partial. MCP connector code wired in Node 1 and Node 5; Gmail OAuth token returns 401 due to OpenAI connector incompatibility. CSV/file fallback is active production behavior.
-- Prototype Streamlit drill-down detail view for Ted — ⚠️ Partial. Drill Down button wired in Briefings tab; detail view not yet implemented.
-- Document risks and limitations in RISKS.md — ⚠️ Partial. RISKS.md updated with 10 tracked risks; ongoing.
-- Tune hybrid signal classifier thresholds on real JotForm sample data — ❌ Pending. Still using synthetic mock data. Planned for Week 10.
+- Confirm Gmail MCP email delivery — ⚠️ Partial. Gmail OAuth token returned 401 due to OpenAI connector incompatibility. Resolved in Week 10 with direct Gmail API.
+- Prototype Streamlit drill-down detail view for Ted — ⚠️ Partial. Drill Down button wired in Briefings tab; detail view not implemented (known limitation).
+- Document risks and limitations in RISKS.md — ✅ Done. RISKS.md has 10 tracked risks with likelihood, impact, and mitigations.
+- Tune hybrid signal classifier thresholds on real JotForm sample data — ❌ Not completed. Still using synthetic mock data (known limitation).
 
 ## Week 9 — Additional Technical Items
 
 - Set up GitHub Actions CI workflow (`.github/workflows/ci.yml`) — ✅ Done. CI runs `uv run pytest tests/ -v` on push and PR to main.
-- Fix HITL invalid input handling — ❌ Pending. `human_review.py` currently silently defaults any invalid input to `accept`. Validation loop planned for Week 10.
-- Wire escalate path to email shift lead via Gmail MCP (Node 5 Option B) — ❌ Pending. Escalation note is captured in state but no email is sent. Planned for Week 10.
+- Fix HITL invalid input handling — ✅ Done in Week 10. Validation loop added to `run_pipeline.py` and `human_review.py`; invalid input re-prompts instead of silently defaulting to `accept`.
+- Wire escalate path to email shift lead — ❌ Not completed. Escalation note is captured in state but no secondary email is sent (known limitation).
 
 ## Week 9 QA Checkpoint Artifacts
 
-The Week 9 submission will include the following artifacts:
-
-- Peer review feedback received and response actions taken.
-- HITL validation evidence with a non-team user.
-- Backlog completion report targeting 80% or more of planned work.
-- Technical report draft covering sections 1 through 3.
-
-### Artifact integration plan
-
-- Collect peer review notes on the LangGraph architecture, MCP plan, and risk/backlog documentation.
-- Capture non-team HITL validation using a structured checklist and evidence notes.
-- Track completed backlog items as a percentage of planned Week 9 priorities.
-- Draft the first three sections of the technical report to document architecture, implementation, and validation approach.
+- Peer review feedback received from Leah (MS CS, Boise State) — ✅ Done. Response actions documented in WEEK9_REPORT.md.
+- HITL validation evidence with a non-team user — ✅ Done. All 3 paths validated; screenshots in `screenshot/`.
+- Backlog completion report — ✅ Done. ~82% completion (11.5/14 items).
+- Technical report draft (Sections 1–3) — ✅ Done. Expanded to full report in Week 10.
 
 ---
+
+## Week 10 — Completed Items
+
+- Fixed HITL invalid input — re-prompt loop added to `run_pipeline.py`; `human_review.py` now returns error state instead of silently defaulting to `accept`.
+- Replaced Gmail MCP (broken 401) with direct Gmail API in Node 5 — real briefing emails now delivered via `google-api-python-client`.
+- Switched Node 1 ingestion from Gmail MCP to JotForm MCP via OpenAI Responses API connector with CSV fallback.
+- Completed full 10-page technical report — all 6 required sections; published as `ShiftNotes_Technical_Report.pdf`.
+- Updated README with submission deliverables section, demo path, known limitations, and YouTube demo placeholder.
+- Fixed `streamlit_app.py` to call `load_dotenv()` and added `get_config_value()` helper for `.env` + `st.secrets` fallback.
+- Gitignored entire `briefings/` folder; updated `generate_gmail_token.py` with better error handling and narrowed OAuth scope.
+- 10/10 pytest tests passing; GitHub Actions CI green on main.
 
 ## Week 10 — Final Delivery Requirements
 
 ### Required Deliverables
 
-- Codebase: documented, test-covered, reproducible environment
-- README.md: setup, run steps, architecture summary
-- CLAUDE.md: project guidance and workflow context
-- 10-page technical report with the following sections:
+- Codebase: documented, test-covered, reproducible environment ✅
+- README.md: setup, run steps, architecture summary ✅
+- CLAUDE.md: project guidance and workflow context ✅
+- 10-page technical report (`ShiftNotes_Technical_Report.pdf`) ✅
   - Problem statement and business justification
   - Architecture decisions and framework rationale
   - Model selection and benchmark evidence
@@ -84,6 +86,6 @@ The Week 9 submission will include the following artifacts:
 ### Required Demo Elements
 
 - End-to-end system run with realistic input
-- One HITL checkpoint in action
-- One failure mode and recovery demonstration
+- One HITL checkpoint in action (show invalid input rejection, then valid decision)
+- One failure mode and recovery demonstration (Gmail fallback to file)
 - Brief walkthrough of architecture and key design choices
