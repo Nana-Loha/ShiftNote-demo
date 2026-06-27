@@ -134,38 +134,32 @@ ShiftNotes prototype detects four primary operational signals:
 - ShiftNotes is implemented as a LangGraph agent pipeline with modular nodes for ingestion, intent classification, signal detection, retrieval/generation, briefing delivery, and human review.
 - The current pipeline preserves the notebook prototype while adding an orchestration layer for agent-style execution and checkpoints.
 - Node responsibilities:
-  - `ingest_email`: ingest JotForm reports via Gmail MCP stub, with CSV fallback for offline development
+  - `ingest_email`: ingest JotForm submissions via JotForm MCP (OpenAI Responses API connector), with CSV fallback when tokens are not set
   - `classify_intent`: route inputs as shift reports or conversational queries
   - `detect_signals`: apply hybrid regex + HuggingFace signal classification
   - `retrieve_and_generate`: aggregate context and generate briefing text
-  - `send_briefing`: send output via Gmail MCP or fallback to file
+  - `send_briefing`: send output via Gmail API (`google-api-python-client`) or fallback to file
   - `human_review`: provide a HITL checkpoint for Ted before final delivery
 - The architecture intentionally keeps the signal classifier and validation modules separate from the delivery mechanism.
 
-### MCP Integration Plan
+### Integration Points
 
-- The primary MCP integration points are Node 1 (`ingest_email`) and Node 5 (`send_briefing`).
-- `ingest_email` will swap `_read_from_csv()` with a Gmail MCP read call to ingest JotForm-based emails.
-- `send_briefing` will swap `_save_to_file()` with a Gmail MCP send call to deliver briefings to Ted's inbox.
-- The MCP connector will use the Gmail MCP endpoint and OAuth credentials configured in the local environment.
-- Early development uses a fallback path so the pipeline can run without completed Gmail MCP wiring.
+- Node 1 (`ingest_email`): reads JotForm submissions via the official JotForm MCP server (`https://mcp.jotform.com`) using the OpenAI Responses API as the MCP client. Activate by setting `JOTFORM_OAUTH_TOKEN` and `JOTFORM_FORM_ID` in `.env`; falls back to CSV when unset.
+- Node 5 (`send_briefing`): delivers briefings via Gmail API (`google-api-python-client`) using OAuth credentials. Activate by setting `TED_EMAIL` in `.env` and placing `credentials.json` + `token.json` in the project root; falls back to file output when unconfigured.
+- Both nodes degrade gracefully — the LangGraph pipeline always completes regardless of which path runs.
 
 ### Current Prototype Limitations
 
 - The dataset is synthetic and not yet validated against real JotForm inputs.
 - Signal detection relies on a small set of hand-authored patterns and a fallback zero-shot model.
-- Gmail MCP is wired for Node 1 and Node 5; requires `GMAIL_OAUTH_TOKEN` in `.env` to activate — falls back to CSV/file otherwise.
+- Node 1 uses JotForm MCP when `JOTFORM_OAUTH_TOKEN` and `JOTFORM_FORM_ID` are set; falls back to CSV otherwise.
+- Node 5 uses Gmail API when `TED_EMAIL`, `credentials.json`, and `token.json` are present; falls back to file otherwise.
+- HITL invalid input validation is active — re-prompts on unrecognized input; node returns error state instead of silently defaulting.
 - Streamlit dashboard is active with 4 tabs; Briefings tab is integrated with the LangGraph pipeline.
 - ChromaDB is populated; RAG retrieval is active via `prototype/rag/embed.py`.
 - First-run HuggingFace model download is large (~330MB), which may slow onboarding.
-- Thresholds for signal detection may require tuning when switched from synthetic data to real shift reports.
-- HITL invalid input silently defaults to `accept` in the CLI path — fix pending.
-
-### Week 9 Remaining
-
-- Fix HITL invalid input handling — add validation and retry prompt in CLI path.
-- Wire escalate path to email shift lead via Gmail MCP (Option B).
-- Tune signal classifier thresholds on real JotForm sample data.
+- Thresholds for signal detection may require tuning when switched from synthetic data to real JotForm reports.
+- Live JotForm form not yet provisioned — pipeline runs on synthetic data until `JOTFORM_OAUTH_TOKEN` and `JOTFORM_FORM_ID` are configured.
 
 ---
 
